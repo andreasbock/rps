@@ -1,4 +1,4 @@
-file=rdnf_constrained-new_mc
+file=pc_new-mc
 
 all:
 	gams $(file).gms
@@ -11,4 +11,4 @@ v:
 	vim -R $(file).lst
 
 g:
-	./new_get_data.py $(file).lst
+	../new_get_data.py $(file).lst

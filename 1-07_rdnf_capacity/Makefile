@@ -1,11 +1,7 @@
-file=rdnf_constrained-new_mc
+file=rdnf_capacity
 
 all:
 	gams $(file).gms
-
-clean:
-	rm $(file).lst
-	rm *.lst
 
 v:
 	vim -R $(file).lst
