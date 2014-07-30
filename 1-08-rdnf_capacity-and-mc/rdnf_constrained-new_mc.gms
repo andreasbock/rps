@@ -51,7 +51,7 @@ equations
 ;
 
 ** ND cost fnc
-costs .. r_costs =e= 80*q_r+0.0015*power(q_r,2) + a*p_rec*q_r - p*q_r;
+costs .. r_costs =e= a*p_rec*q_r - p*q_r;
 max_nd .. nd_max - q_n =g= 0;
 min_nd .. q_n - nd_min =g= 0;
 
