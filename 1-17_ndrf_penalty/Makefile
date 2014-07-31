@@ -7,5 +7,5 @@ v:
 	vim $(file).lst
 
 g:
-	~/bin/get_data.py $(file).lst
+	../new_get_data.py $(file).lst
 	feh foo.png

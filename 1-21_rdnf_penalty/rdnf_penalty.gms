@@ -18,7 +18,8 @@ variables
 ;
 
 positive variables q_n, q_r, p, p_rec;
-binary variable u;
+positive variables u;
+*binary variable u;
 
 equations
     costs      objective function
@@ -28,6 +29,7 @@ equations
     mc_b       market-clearing complementarity LHS
     p_rec_disc discretise p_rec
     dummy_c
+    u_c
 ;
 
 ** ND cost fnc
@@ -40,16 +42,19 @@ mc_a .. (1-a)*q_r - a*q_n =g= 0;
 mc_b .. cp - p_rec =g= 0;
 p_rec_disc .. p_rec =e= cp*u;
 
-dummy_c .. dummy =e= cp - p_rec;
+*dummy_c .. dummy =e= cp - p_rec;
+dummy_c .. p_rec =e= cp*u;
+u_c .. 1-u =g= 0;
 
 model ndrf
 /costs,
 grd_n,
 inv_demand,
-mc_b,
+*mc_b,
 *p_rec_disc,
-mc_a.dummy,
-dummy_c
+mc_a.p_rec,
+dummy_c,
+u_c
 /;
 
 *** Loop over all RPS levels

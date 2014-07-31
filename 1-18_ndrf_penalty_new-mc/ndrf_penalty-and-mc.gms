@@ -80,6 +80,5 @@ display
 q_r_res,
 q_n_res,
 p_rec_res,
-p_res,
-nd_costsp
+p_res
 ;

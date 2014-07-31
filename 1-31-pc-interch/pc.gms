@@ -21,10 +21,10 @@ equations
 ;
 
 ** Non-renewable Gradient
-grd_n .. p =e= 20 + 0.001*q_n + a*p_rec*q_n;
+grd_n .. p =e= 80 + 0.003*q_n + a*p_rec*q_n;
 
 ** Renewable Gradient
-grd_r .. p =e= 80 + 0.003*q_r - (1-a)*p_rec;
+grd_r .. p =e= 20 + 0.001*q_r - (1-a)*p_rec;
 
 inv_demand .. p =e= 100 - 0.01*(q_n+q_r);
 mcc .. (1-a)*q_r - a*q_n =g= 0;
@@ -49,8 +49,7 @@ loop(i,
     p_rec_res(i)=p_rec.l; 
     p_res(i)=p.l; 
 );
-option con=0;
-*option convergence_tolerance=0;
+
 display
 q_r_res,
 q_n_res,

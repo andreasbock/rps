@@ -3,9 +3,12 @@ file=pc
 all:
 	gams $(file).gms
 
+clean:
+	rm $(file).lst
+	rm *.lst
+
 v:
-	vim $(file).lst
+	vim -R $(file).lst
 
 g:
 	../new_get_data.py $(file).lst
-	feh foo.png

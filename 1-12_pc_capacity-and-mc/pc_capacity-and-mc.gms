@@ -15,13 +15,13 @@ parameter
     p_cst  demand intercept /100/
     p_lin  demand modifier /0.1/
 
-    nd_max   max generation per stage /2000/
+    nd_max   max generation per stage /362/
     nd_min   min generation per stage /0/
 
     rf_min   min generation per stage /0/
 
 *** Wind "power"
-    w /2000/
+    w /362/
 ;
 
 scalar M constant for Fortuny-Amat linearization /4000/;
