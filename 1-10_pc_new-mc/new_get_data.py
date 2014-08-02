@@ -10,7 +10,7 @@ lines = f.readlines()
 f.close()
 
 def parse_result(line):
-    result = [0]*11
+    result = [0.0]*11
     count = 1
     i = 0
     while count <= len(line)/2:
@@ -26,8 +26,11 @@ def parse_result(line):
 
 legends = ['q_r', 'q_n', 'p_rec', 'p']
 cols   = ['green', 'red', 'blue', 'purple']
-styles   = ['^', '--', 's', 'l']
+styles = ['^', '--', 's', '']
 rps    = np.arange(0,1.1,0.1)
+
+#figure()
+#subplot(111)
 
 fig, ax1 = subplots()
 
@@ -36,11 +39,6 @@ ax1.set_ylabel('Quantities')
 
 ax2 = ax1.twinx()
 ax2.set_ylabel('Price')
-
-ax1.spines['top'].set_visible(False)
-ax1.spines['bottom'].set_visible(False)
-ax2.spines['top'].set_visible(False)
-ax2.spines['bottom'].set_visible(False)
 
 ax1.grid(True)
 
@@ -52,13 +50,28 @@ for line in lines:
         res = parse_result(line.split())
         if idx < 3:
             my_plots[idx], = ax1.plot(rps, res, styles[idx], c=cols[idx], label=legends[idx], linewidth=2)
+            break
         else:
             my_plots[idx], = ax2.plot(rps, res, styles[idx], c=cols[idx], label=legends[idx], linewidth=2)
         idx += 1
 
+ax1.spines['top'].set_visible(False)
+ax1.spines['bottom'].set_visible(False)
+ax2.spines['top'].set_visible(False)
+ax2.spines['bottom'].set_visible(False)
+
+my_plots[1], = ax1.plot(rps, [0.0]*11, styles[1], c=cols[1], label=legends[1], linewidth=2)
+my_plots[2], = ax2.plot(rps, [0.0]*11, styles[2], c=cols[2], label=legends[2], linewidth=2)
+my_plots[3], = ax2.plot(rps, [0.0]*11, styles[3], c=cols[3], label=legends[3], linewidth=2)
 ax1.legend(my_plots[:2], legends[:2], 'upper left')
+
 ax2.legend(my_plots[2:], legends[2:], 'upper right')
 
+#legend([p1], ["Label 1"], loc=1)
+#legend([p2], ["Label 2"], loc=4) # this removes l1 from the axes.
+#gca().add_artist(l1) # add l1 as a separate artist to the axes
+
+#legend = legend(loc='upper right', shadow=True)
 savefig('foo.png',bbox_inches='tight')
 
 
