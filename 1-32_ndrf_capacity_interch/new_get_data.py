@@ -26,7 +26,7 @@ def parse_result(line):
 
 legends = ['q_r', 'q_n', 'p_rec', 'p']
 cols   = ['green', 'red', 'blue', 'purple']
-styles   = ['^', '--', 's', 'l']
+styles   = ['^', '--', 's', '']
 rps    = np.arange(0,1.1,0.1)
 
 fig, ax1 = subplots()
@@ -53,11 +53,17 @@ for line in lines:
         if idx < 2:
             my_plots[idx], = ax1.plot(rps, res, styles[idx], c=cols[idx], label=legends[idx], linewidth=2)
         else:
+            idx += 1
             my_plots[idx], = ax2.plot(rps, res, styles[idx], c=cols[idx], label=legends[idx], linewidth=2)
+            break
         idx += 1
 
-ax1.legend(my_plots[:2], legends[:2], 'upper left')
-ax2.legend(my_plots[2:], legends[2:], 'upper right')
+idx=2
+my_plots[idx], = ax2.plot(rps, [0.0]*11, styles[idx], c=cols[idx], label=legends[idx], linewidth=2)
+
+#ax1.legend(my_plots[:2], legends[:2], 'upper left')
+#ax2.legend(my_plots[2:], legends[2:], 'upper right')
+ax1.legend(my_plots, legends, loc='upper center', bbox_to_anchor=(0.5, -0.1),fancybox=True, shadow=True, ncol=5)
 
 savefig('foo.png',bbox_inches='tight')
 
