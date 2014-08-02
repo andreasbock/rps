@@ -8,6 +8,8 @@ variables
     p_rec    price of RECs
     q_r     renewable generation
     q_n     non-renewable generation
+    gamma_r_lo
+    gamma_n_lo
 ;
 
 positive variables p_rec;
@@ -18,18 +20,29 @@ equations
     grd_r     gradient over R lagrangian
     grd_n     gradient over N lagrangian
     mcc         market-clearing complementarity
+    min_n
+    min_r
 ;
 
 ** Non-renewable Gradient
-grd_n .. p =e= 80 + 0.003*q_n + a*p_rec*q_n;
+grd_n .. p =e= 80 + 0.003*q_n + a*p_rec*q_n - gamma_n_lo;
+min_n .. q_n =g= 0;
 
 ** Renewable Gradient
-grd_r .. p =e= 20 + 0.001*q_r - (1-a)*p_rec;
+grd_r .. p =e= 20 + 0.001*q_r - (1-a)*p_rec - gamma_r_lo;
+min_r .. q_r =g= 0;
 
 inv_demand .. p =e= 100 - 0.01*(q_n+q_r);
 mcc .. (1-a)*q_r - a*q_n =g= 0;
 
-model pc /grd_n,grd_r,inv_demand,mcc.p_rec/;
+model pc
+/grd_n,
+grd_r,
+inv_demand,
+min_n.gamma_n_lo,
+min_r.gamma_r_lo,
+mcc.p_rec
+/;
 
 *** Loop over all RPS levels
 set i /i1*i11/;
