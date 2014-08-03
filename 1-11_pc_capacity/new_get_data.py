@@ -36,10 +36,11 @@ rc('font',family='serif')
 
 ax2 = ax1.twinx()
 
-#ax1.spines['top'].set_visible(False)
-#ax1.spines['bottom'].set_visible(False)
-#ax2.spines['top'].set_visible(False)
-#ax2.spines['bottom'].set_visible(False)
+ax1.spines['top'].set_visible(False)
+ax1.spines['bottom'].set_smart_bounds(True)
+ax2.spines['top'].set_visible(False)
+ax2.spines['bottom'].set_smart_bounds(True)
+
 for loc, spine in ax1.spines.items():
     if loc in ['left','bottom','right']:
             spine.set_position(('outward',10)) # outward by 10 points
@@ -56,29 +57,28 @@ ax2.set_ylabel(r"Prices ($p$, $p_{REC}$)")
 
 my_plots = [None]*4
 
+tot=np.zeros(11)
 idx = 0
 for line in lines:
     if line and line.startswith("i") and line[1].isdigit():
         res = parse_result(line.split())
         if idx < 2:
-            my_plots[idx], = ax1.plot(rps, res, styles[idx], c=cols[idx], label=legends[idx], linewidth=2)
-            idx += 1
-            break
+            tot+=res
+            #my_plots[idx], = ax1.plot(rps, res, styles[idx], c=cols[idx], label=legends[idx], linewidth=2)
         else:
             my_plots[idx], = ax2.plot(rps, res, styles[idx], c=cols[idx], label=legends[idx], linewidth=2)
         idx += 1
 
-res = [0.0]*11
-my_plots[idx], = ax1.plot(rps, res, styles[idx], c=cols[idx], label=legends[idx], linewidth=2)
-idx += 1
-my_plots[idx], = ax2.plot(rps, res, styles[idx], c=cols[idx], label=legends[idx], linewidth=2)
-idx += 1
-my_plots[idx], = ax2.plot(rps, res, styles[idx], c=cols[idx], label=legends[idx], linewidth=2)
+figure()
+print tot
+plot(res,tot)
+show()
 
 #ax1.legend(my_plots[:2], legends[:2], 'upper left')
 #ax2.legend(my_plots[2:], legends[2:], 'upper right')
 ax1.legend(my_plots, legends, loc='upper center', bbox_to_anchor=(0.5, 1.125),fancybox=True, shadow=True, ncol=5)
 
 savefig('foo.png',bbox_inches='tight')
+#savefig('foo.png')
 
 

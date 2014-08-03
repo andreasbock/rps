@@ -28,13 +28,13 @@ equations
 ;
 
 ** Non-renewable Gradient
-*grd_n .. p =e= 20 + 0.001*q_n + a*p_rec*q_n - gamma_n_lo;
-grd_n .. p =e= 20 + 0.001*q_n + a*p_rec*q_n;
+grd_n .. p =e= 20 + 0.001*q_n + a*p_rec*q_n - gamma_n_lo;
+*grd_n .. p =e= 20 + 0.001*q_n + a*p_rec*q_n;
 min_n .. q_n =g= 0;
 
 ** Renewable Gradient
-*grd_r .. p =e= 80 + 0.003*q_r - (1-a)*p_rec - gamma_r_lo;
-grd_r .. p =e= 80 + 0.003*q_r - (1-a)*p_rec;
+grd_r .. p =e= 80 + 0.003*q_r - (1-a)*p_rec - gamma_r_lo;
+*grd_r .. p =e= 80 + 0.003*q_r - (1-a)*p_rec;
 min_r .. q_r =g= 0;
 
 inv_demand .. p =e= 100 - 0.01*(q_n+q_r);
@@ -46,8 +46,8 @@ model pc
 grd_r,
 inv_demand,
 mcc.p_rec
-*min_n.gamma_n_lo,
-*min_r.gamma_r_lo
+min_n.gamma_n_lo,
+min_r.gamma_r_lo
 /;
 
 pc.optfile = 1;
