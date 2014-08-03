@@ -55,29 +55,35 @@ ax1.set_xlabel(r'RPS level ($\alpha$)')
 ax1.set_ylabel(r'Quantities ($q_r$, $q_n$)')
 ax2.set_ylabel(r"Prices ($p$, $p_{REC}$)")
 
-
-
 my_plots = [None]*4
 
 idx = 0
 for line in lines:
     if line and line.startswith("i") and line[1].isdigit():
         res = parse_result(line.split())
-        if idx < 2:
+        print res
+        print " HERE:: ", idx
+        if idx < 1:
+            print "FIRST!"
             my_plots[idx], = ax1.plot(rps, res, styles[idx], c=cols[idx], label=legends[idx], linewidth=2)
         else:
-            idx += 1
+            idx = 3
+            print "\n here\n"
             my_plots[idx], = ax2.plot(rps, res, styles[idx], c=cols[idx], label=legends[idx], linewidth=2)
-            break
         idx += 1
 
+res = [0.0]*11
+idx=1
+my_plots[idx], = ax1.plot(rps, res, styles[idx], c=cols[idx], label=legends[idx], linewidth=2)
 idx=2
-my_plots[idx], = ax2.plot(rps, [0.0]*11, styles[idx], c=cols[idx], label=legends[idx], linewidth=2)
-
+my_plots[idx], = ax2.plot(rps, res, styles[idx], c=cols[idx], label=legends[idx], linewidth=2)
+for i in my_plots:
+    print i
 #ax1.legend(my_plots[:2], legends[:2], 'upper left')
 #ax2.legend(my_plots[2:], legends[2:], 'upper right')
-ax1.legend(my_plots, legends, loc='upper center', bbox_to_anchor=(0.5, -0.1),fancybox=True, shadow=True, ncol=5)
+ax1.legend(my_plots, legends, loc='upper center', bbox_to_anchor=(0.5, 1.125),fancybox=True, shadow=True, ncol=5)
 
 savefig('foo.png',bbox_inches='tight')
+#savefig('foo.png')
 
 

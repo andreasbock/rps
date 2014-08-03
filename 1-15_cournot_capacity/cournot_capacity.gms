@@ -15,13 +15,15 @@ parameter
     p_cst  demand intercept /100/
     p_lin  demand modifier /0.1/
 
-    nd_max   max generation per stage /362/
+    nd_max   max generation per stage /500/
+*   nd_max   max generation per stage /362/
     nd_min   min generation per stage /0/
 
     rf_min   min generation per stage /0/
 
 *** Wind "power"
-    w /362/
+    w /250/
+*   w /362/
 ;
 
 variables
