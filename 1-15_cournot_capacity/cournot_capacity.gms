@@ -88,7 +88,10 @@ parameter p_rec_res(i);
 parameter p_res(i);
 parameter profits_rf(i);
 parameter profits_nd(i);
-scalar stop /0/;
+parameter r_lo(i);
+parameter r_hi(i);
+parameter n_lo(i);
+parameter n_hi(i);
 
 loop(i,
     a=(ord(i)-1)/10;
@@ -97,15 +100,19 @@ loop(i,
     q_nd_res(i)=q_nd.l; 
     p_rec_res(i)=p_rec.l; 
     p_res(i)=p.l; 
-*   profits_rf(i) = profit_rf.l;
-*   profits_nd(i) = profit_nd.l;
+    r_lo(i)=gamma_rf_lo.l;
+    r_hi(i)=gamma_rf_hi.l;
+    n_lo(i)=gamma_nd_lo.l;
+    n_hi(i)=gamma_nd_hi.l;
 );
 
 display
 q_rf_res,
 q_nd_res,
 p_rec_res,
-p_res
-*profits_rf,
-*profits_nd
+p_res,
+r_lo,
+r_hi,
+n_lo,
+n_hi
 ;
