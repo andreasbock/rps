@@ -24,7 +24,7 @@ def parse_result(line):
         count +=1
     return result
 
-legends = ['$q_r$', '$q_n$', '$p_rec$', '$p$']
+legends = ['$q_r$', '$q_n$', '$p_{REC}$', '$p$']
 cols   = ['green', 'red', 'blue', 'purple']
 styles   = ['^', '--', 's', '4']
 rps    = np.arange(0,1.1,0.1)
