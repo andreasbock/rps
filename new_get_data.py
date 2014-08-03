@@ -26,7 +26,7 @@ def parse_result(line):
 
 legends = ['$q_r$', '$q_n$', '$p_{REC}$', '$p$']
 cols   = ['green', 'red', 'blue', 'purple']
-styles   = ['^', '--', 's', '4']
+styles   = ['^', '--', 's', '-']
 rps    = np.arange(0,1.1,0.1)
 
 fig, ax1 = subplots()
@@ -34,18 +34,11 @@ fig, ax1 = subplots()
 rc('text',usetex=True)
 rc('font',family='serif')
 
-ax1.set_xlabel(r'RPS level')
-#ax1.set_ylabel(r'Quantities')
-ax1.set_ylabel(r'Quantities ($q_r$, $q_n$)')
-
 ax2 = ax1.twinx()
-ax2.set_ylabel(r"Prices ($p$, $p_{REC}$)")
 
 ax1.spines['top'].set_visible(False)
-#ax1.spines['bottom'].set_visible(False)
 ax1.spines['bottom'].set_smart_bounds(True)
 ax2.spines['top'].set_visible(False)
-#ax2.spines['bottom'].set_visible(False)
 ax2.spines['bottom'].set_smart_bounds(True)
 
 for loc, spine in ax1.spines.items():
@@ -57,6 +50,10 @@ for loc, spine in ax2.spines.items():
             spine.set_position(('outward',10)) # outward by 10 points
 
 ax1.grid(True)
+
+ax1.set_xlabel(r'RPS level ($\alpha$)')
+ax1.set_ylabel(r'Quantities ($q_r$, $q_n$)')
+ax2.set_ylabel(r"Prices ($p$, $p_{REC}$)")
 
 my_plots = [None]*4
 
@@ -75,5 +72,6 @@ for line in lines:
 ax1.legend(my_plots, legends, loc='upper center', bbox_to_anchor=(0.5, 1.125),fancybox=True, shadow=True, ncol=5)
 
 savefig('foo.png',bbox_inches='tight')
+#savefig('foo.png')
 
 

@@ -34,11 +34,7 @@ fig, ax1 = subplots()
 rc('text',usetex=True)
 rc('font',family='serif')
 
-ax1.set_xlabel(r'RPS level')
-ax1.set_ylabel(r'Quantities ($q_r$, $q_n$)')
-
 ax2 = ax1.twinx()
-ax2.set_ylabel(r"Prices ($p$, $p_{REC}$)")
 
 #ax1.spines['top'].set_visible(False)
 #ax1.spines['bottom'].set_visible(False)
@@ -53,6 +49,10 @@ for loc, spine in ax2.spines.items():
             spine.set_position(('outward',10)) # outward by 10 points
 
 ax1.grid(True)
+
+ax1.set_xlabel(r'RPS level ($\alpha$)')
+ax1.set_ylabel(r'Quantities ($q_r$, $q_n$)')
+ax2.set_ylabel(r"Prices ($p$, $p_{REC}$)")
 
 my_plots = [None]*4
 
