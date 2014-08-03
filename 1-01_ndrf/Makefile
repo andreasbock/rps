@@ -7,4 +7,4 @@ v:
 	vim -R $(file).lst
 
 g:
-	./get_data.py $(file).lst
+	../new_get_data.py $(file).lst
