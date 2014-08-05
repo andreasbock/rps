@@ -59,17 +59,31 @@ ax2.set_ylabel(r"Prices ($p$, $p_{REC}$)")
 
 my_plots = [None]*4
 
+q_r = np.zeros(11)
+q_n = np.zeros(11)
+pz=[None,None]
+
 idx = 0
 for line in lines:
     if line and line.startswith("i") and line[1].isdigit():
         res = parse_result(line.split())
         if idx < 2:
             my_plots[idx], = ax1.plot(rps, res, styles[idx], c=cols[idx], label=legends[idx], linewidth=2)
+            pz[idx]=res
         else:
             idx += 1
             my_plots[idx], = ax2.plot(rps, res, styles[idx], c=cols[idx], label=legends[idx], linewidth=2)
             break
         idx += 1
+debug=0
+if debug:
+    total = np.zeros(11)
+    for i in range(11):
+        total[i]=(1-float(i)/10.0)*pz[0][i] - float(i)/10.0*pz[1][i]
+
+    for i in total:
+        print i
+    exit()
 
 idx=2
 my_plots[idx], = ax2.plot(rps, [0.0]*11, styles[idx], c=cols[idx], label=legends[idx], linewidth=2)

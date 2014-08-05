@@ -84,7 +84,7 @@ for i in range(11):
 
 for i in total:
     print i
-exit()
+#exit()
 idx=2
 my_plots[idx], = ax2.plot(rps, [0.0]*11,styles[idx], c=cols[idx], label=legends[idx], linewidth=2)
 #ax1.legend(my_plots[:2], legends[:2], 'upper left')
