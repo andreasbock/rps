@@ -26,9 +26,6 @@ equations
     mc         market-clearing complementarity
 ;
 
-q_n.fx = 100;
-
-
 ** ND cost fnc
 costs .. nd_costs =e= 80*q_n+0.0015*power(q_n,2) + a*p_rec*q_n - p*q_n;
 

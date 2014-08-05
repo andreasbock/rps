@@ -24,45 +24,54 @@ def parse_result(line):
         count +=1
     return result
 
-legends = ['q_r', 'q_n', 'p_rec', 'p']
+
+legends = ['$q_r$', '$q_n$', '$p_{REC}$', '$p$']
 cols   = ['green', 'red', 'blue', 'purple']
+styles   = ['^', '--', 's', '-']
 rps    = np.arange(0,1.1,0.1)
-
-#figure()
-#subplot(111)
-
 fig, ax1 = subplots()
-
-ax1.set_xlabel('RPS level')
-ax1.set_ylabel('Quantities')
-
+rc('text',usetex=True)
+rc('font',family='serif')
 ax2 = ax1.twinx()
-ax2.set_ylabel('Price')
+ax1.spines['top'].set_visible(False)
+ax1.spines['bottom'].set_smart_bounds(True)
+ax2.spines['top'].set_visible(False)
+ax2.spines['bottom'].set_smart_bounds(True)
+
+for loc, spine in ax1.spines.items():
+    if loc in ['left','bottom','right']:
+            spine.set_position(('outward',10)) # outward by 10 points
+
+for loc, spine in ax2.spines.items():
+    if loc in ['left','bottom','right']:
+            spine.set_position(('outward',10)) # outward by 10 points
 
 ax1.grid(True)
 
-my_plots = [None]*2
+ax1.set_xlabel(r'RPS level ($\alpha$)')
+ax1.set_ylabel(r'Quantities ($q_r$, $q_n$)')
+ax2.set_ylabel(r"Prices ($p$, $p_{REC}$)")
+
+my_plots = [None]*4
 
 idx = 0
 for line in lines:
     if line and line.startswith("i") and line[1].isdigit():
         res = parse_result(line.split())
         if idx < 1:
-            my_plots[idx], = ax1.plot(rps, res, c=cols[idx], label=legends[idx], linewidth=2)
+            my_plots[idx], = ax1.plot(rps, res, styles[idx], c=cols[idx], label=legends[idx], linewidth=2)
             idx=3
         else:
-            my_plots[idx-2], = ax2.plot(rps, res, c=cols[idx], label=legends[idx], linewidth=2,linestyle='--')
+            my_plots[idx], = ax2.plot(rps, res, styles[idx], c=cols[idx], label=legends[idx], linewidth=2)
+            break
+        #idx+=1
 
-#for i in range(0,4):
-    #if i < 3:
-ax1.legend(my_plots[:1], legends[:1], 'upper left')
-ax2.legend(my_plots[1:], legends[3:], 'upper right')
+res=[0.0]*11
+idx=1
+my_plots[idx], = ax1.plot(rps, res, styles[idx], c=cols[idx], label=legends[idx], linewidth=2)
+idx=2
+my_plots[idx], = ax2.plot(rps, res, styles[idx], c=cols[idx], label=legends[idx], linewidth=2)
 
-#legend([p1], ["Label 1"], loc=1)
-#legend([p2], ["Label 2"], loc=4) # this removes l1 from the axes.
-#gca().add_artist(l1) # add l1 as a separate artist to the axes
-
-#legend = legend(loc='upper right', shadow=True)
+ax1.legend(my_plots, legends, loc='upper center', bbox_to_anchor=(0.5, 1.125),fancybox=True, shadow=True, ncol=5)
 savefig('foo.png',bbox_inches='tight')
-
 
