@@ -45,10 +45,10 @@ equations
 ;
 
 ** Non-renewable Gradient
-grd_n .. p =e= 20 + 0.001*q_n + a*p_rec*q_n - p_lin*q_n;
+grd_n .. p =e= 20 + 0.001*q_n + a*p_rec*q_n + p_lin*q_n;
 
 ** Renewable Gradient
-grd_r .. p =e= 80 + 0.003*q_r - (1-a)*p_rec - p_lin*q_r;
+grd_r .. p =e= 80 + 0.003*q_r - (1-a)*p_rec + p_lin*q_r;
 
 inv_demand .. p =e= 100 - 0.01*(q_n+q_r);
 mcc .. (1-a)*q_r - a*q_n =g= 0;

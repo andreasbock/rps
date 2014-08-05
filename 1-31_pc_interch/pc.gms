@@ -12,7 +12,7 @@ variables
     gamma_n_lo
 ;
 
-positive variables p_rec;
+positive variables p_rec, gamma_n_lo, gamma_r_lo;
 
 equations
     costs      objective function
@@ -53,6 +53,8 @@ parameter p_rec_res(i);
 parameter p_res(i);
 parameter profits_rf(i);
 parameter profits_nd(i);
+parameter nlo(i);
+parameter rlo(i);
 
 loop(i,
     a=(ord(i)-1)/10;
@@ -61,6 +63,8 @@ loop(i,
     q_n_res(i)=q_n.l; 
     p_rec_res(i)=p_rec.l; 
     p_res(i)=p.l; 
+    nlo(i)=gamma_n_lo.l;
+    rlo(i)=gamma_r_lo.l;
 );
 
 display

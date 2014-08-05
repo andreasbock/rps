@@ -35,7 +35,7 @@ variables
     gamma_n_lo
 ;
 
-positive variables p_rec;
+positive variables p_rec, gamma_n_lo, gamma_r_lo;
 binary variables u_mc;
 
 equations
@@ -49,11 +49,11 @@ equations
 ;
 
 ** Non-renewable Gradient
-grd_n .. p =e= 20 + 0.001*q_n + a*p_rec*q_n - p_lin*q_n - gamma_n_lo;
+grd_n .. p =e= 20 + 0.001*q_n + a*p_rec*q_n + p_lin*q_n - gamma_n_lo;
 min_n .. q_n =g= 0;
 
 ** Renewable Gradient
-grd_r .. p =e= -(1-a)*p_rec - p_lin*q_r - gamma_r_lo;
+grd_r .. p =e= -(1-a)*p_rec + p_lin*q_r - gamma_r_lo;
 min_r .. q_r =g= 0;
 
 inv_demand .. p =e= 100 - 0.01*(q_n+q_r);

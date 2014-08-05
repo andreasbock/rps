@@ -5,7 +5,7 @@ parameter
 ;
 
 variables
-    nd_costs profit of the non-renewable dominant
+    nd_costs negative profit of the non-renewable
     p        electricity price
     p_rec    price of RECs
     q_r     renewable generation
@@ -61,7 +61,7 @@ q_n.l,
 p_rec.l,
 p.l
 ;
-*$exit
+$exit
 
 *** Loop over all RPS levels
 set i /i1*i11/;

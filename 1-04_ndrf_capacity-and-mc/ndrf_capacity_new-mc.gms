@@ -6,7 +6,7 @@ parameter
     a        RPS requirement
     n_max   max generation per stage /2000/
     n_min   min generation per stage /0/
-    w        wind power               /2000/
+    w        wind power               /1000/
 ;
 
 variables
@@ -63,6 +63,7 @@ parameter p_res(i);
 parameter profits_r(i);
 parameter profits_n(i);
 parameter nd_costsp(i);
+parameter r_hi(i);
 
 loop(i,
     a=(ord(i)-1)/10;
@@ -71,6 +72,7 @@ loop(i,
     q_n_res(i)=q_n.l; 
     p_rec_res(i)=p_rec.l; 
     p_res(i)=p.l; 
+    r_hi(i)=eta_r_hi.l;
 );
 
 display
