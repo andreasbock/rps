@@ -13,7 +13,7 @@ parameter
 
 *** Inverse demand function components
     p_cst  demand intercept /100/
-    p_lin  demand modifier /0.001/
+    p_lin  demand modifier /0.01/
 
     nd_max   max generation per stage /2000/
 *   Redundant constraint, but is included if we want to up it

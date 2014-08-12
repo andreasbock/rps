@@ -1,4 +1,4 @@
-option mcp=path;
+option mcp=miles;
 
 parameter
     a        RPS requirement
@@ -52,7 +52,7 @@ min_r.gamma_r_lo
 
 pc.optfile = 1;
 
-a=1.0;
+a=0.9;
 solve pc using mcp;
 
 display

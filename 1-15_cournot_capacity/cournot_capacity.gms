@@ -13,7 +13,7 @@ parameter
 
 *** Inverse demand function components
     p_cst  demand intercept /100/
-    p_lin  demand modifier /0.1/
+    p_lin  demand modifier /0.01/
 
     nd_max   max generation per stage /500/
 *   nd_max   max generation per stage /362/
@@ -110,9 +110,9 @@ display
 q_rf_res,
 q_nd_res,
 p_rec_res,
-p_res,
-r_lo,
-r_hi,
-n_lo,
-n_hi
+p_res
+*r_lo,
+*r_hi,
+*n_lo,
+*n_hi
 ;

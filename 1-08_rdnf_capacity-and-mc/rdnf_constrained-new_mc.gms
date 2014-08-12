@@ -11,10 +11,6 @@ parameter
     nd_lin_cst linear term of ND cost /20/
     nd_qdr_cst quadratic term of ND cost /0.0005/
 
-*** Inverse demand function components
-    p_cst  demand intercept /100/
-    p_lin  demand modifier /0.001/
-
     nd_max   max generation per stage /2000/
 *   Redundant constraint, but is included if we want to up it
     nd_min   min generation per stage /0/
