@@ -8,15 +8,15 @@ Sets
 Scalar
     n_min  minimum non-renewable production   /0/
     n_max  maximum non-renewable production   /500/
-    exp_bl renewable expansion blocks         /50/
-    c_inv  investment cost per unit           /7/
-    c_max  investment budget                  /200/
-    d      demand for electricity             /300/
-    M      constant                           /1000000/
+    exp_bl renewable expansion blocks         /5/
+    c_inv  investment cost per unit           /10/
+    c_max  investment budget                  /1000/
+    d      demand for electricity             /400/
+    M      constant                           /100000000/
 ;
 
 Parameter
-    w(s)   wind production           /s0 150, s1 250/
+    w(s)   wind production           /s0 1.3, s1 0.8/
     p(s)   probability of scenario s /s0 0.5, s1 0.5/
 ;
 
@@ -44,6 +44,7 @@ Variables
 positive variable q_r, q_n;
 positive variable r_inst;
 positive variable gam_r_lo, gam_r_hi, gam_n_lo, gam_n_hi;
+positive variable lda;
 
 binary variable v, u_n_hi, u_n_lo, u_r_hi, u_r_lo;
 
@@ -59,18 +60,12 @@ Equations
     n_up_a
     n_up_b
     n_up_c
-
-    n_up_a
-    n_up_b
-    n_up_c
-
     n_lo_a
     n_lo_b
 
     r_up_a
     r_up_b
     r_up_c
-
     r_lo_a
     r_lo_b
     
@@ -85,14 +80,14 @@ Equations
 ;
 
 * Upper-level problem
-obj .. r_costs =e= c_inv*r_inst - sum(s,p(s)*exp_bl*w(s)*sum(b,k(b,s)));
+obj .. r_costs =e= c_inv*r_inst - exp_bl*sum(s,p(s)*w(s)*sum(b,k(b,s)));
 inv_disc .. r_inst =e= exp_bl*sum(b,v(b));
-inv_bound .. c_inv*r_inst =l= c_max;
+inv_bound .. c_max =g= c_inv*r_inst;
 
 * KKTs for lower-level problem
-grd_lg_r(s) ..                -gam_r_lo(s)+gam_r_hi(s)+lda(s)=e=0;
-grd_lg_n(s) .. 20+0.001*q_n(s)-gam_n_lo(s)+gam_n_hi(s)+lda(s)=e=0;
-demand(s) .. q_r(s) + q_n(s) =e= d;
+grd_lg_r(s) ..                -gam_r_lo(s)+gam_r_hi(s) - lda(s) =e= 0;
+grd_lg_n(s) .. 20+0.001*q_n(s)-gam_n_lo(s)+gam_n_hi(s) - lda(s) =e= 0;
+demand(s) .. d- (q_r(s) + q_n(s)) =e= 0;
 
 n_up_a(s) .. n_max - q_n(s) =l= M*u_n_hi(s);
 n_up_b(s) .. gam_n_hi(s) =l= M*(1-u_n_hi(s));
@@ -109,7 +104,7 @@ r_lo_a(s) .. q_r(s) =l= M*u_r_lo(s);
 r_lo_b(s) .. gam_r_lo(s) =l= M*(1-u_r_lo(s));
 
 * Linearizing lambda term in objective
-set_k(b,s) .. k(b,s) =e= lda(s) - k_hat(b,s);
+set_k(b,s) .. k(b,s) =e= gam_r_hi(s) - k_hat(b,s);
 lin_lda1_1(b,s) .. 0 =l= k(b,s);
 lin_lda1_2(b,s) .. k(b,s) =l= v(b)*M;
 lin_lda2_1(b,s) .. 0 =l= k_hat(b,s);
@@ -129,7 +124,7 @@ n_lo_a,
 n_lo_b,
 r_up_a,
 r_up_b,
-*r_up_c,
+r_up_c,
 r_lo_a,
 r_lo_b,
 lin_lda1_1,
@@ -141,31 +136,13 @@ set_k
 
 option minlp=couenne;
 solve stoch_wind_exp min r_costs using mip;
-display q_r.l, q_n.l;
-
-$exit
-
-*** Loop over all RPS levels
-set i /i1*i11/;
-
-parameter q_r_res(i);
-parameter q_n_res(i);
-parameter p_rec_res(i);
-parameter p_res(i);
-parameter profits_rf(i);
-parameter profits_nd(i);
-
-loop(i,
-    a=(ord(i)-1)/10;
-    solve pc using mcp;
-    q_r_res(i)=q_r.l; 
-    q_n_res(i)=q_n.l; 
-    p_rec_res(i)=p_rec.l; 
-    p_res(i)=p.l; 
-);
-
-display
-q_r_res,
-q_n_res,
-p_res
+display q_r.l, q_n.l, r_inst.l, lda.l, u_r_lo.l, u_r_hi.l,
+gam_r_hi.l,
+gam_r_lo.l,
+gam_n_hi.l,
+gam_n_lo.l,
+r_costs.l,
+k.l,
+k_hat.l,
+v.l
 ;

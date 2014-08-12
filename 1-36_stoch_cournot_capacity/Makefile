@@ -11,4 +11,4 @@ v:
 	vim -R $(file).lst
 
 g:
-	../new_get_data.py $(file).lst
+	./plt.py $(file).lst
