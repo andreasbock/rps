@@ -6,7 +6,6 @@ Sets
 ;
 
 Scalar
-    a      RPS requirement                    /0.1/
     n_min  minimum non-renewable production   /0/
     n_max  maximum non-renewable production   /500/
     exp_bl renewable expansion blocks         /5/
@@ -23,12 +22,11 @@ Parameter
 
 Variables
     r_costs objective function value
+    p_e(s)  price of electricity
     q_r(s)  renewable generation
     q_n(s)  non-renewable generation
     r_inst  renewable capacity installed
-    lda(s)  demand dual
     v(b)    binary
-    p_rec   price of RECs
 * Dual variables
     gam_r_lo(s)
     gam_r_hi(s)
@@ -41,15 +39,14 @@ Variables
     u_n_lo(s)
     u_r_hi(s)
     u_r_lo(s)
-    u_mcc
 ;
 
 positive variable q_r, q_n;
 positive variable r_inst;
 positive variable gam_r_lo, gam_r_hi, gam_n_lo, gam_n_hi;
-positive variable lda;
+positive variable p_e;
 
-binary variable v, u_n_hi, u_n_lo, u_r_hi, u_r_lo, u_mcc;
+binary variable v, u_n_hi, u_n_lo, u_r_hi, u_r_lo;
 
 Equations
     obj       negative profits for renewable
@@ -72,10 +69,6 @@ Equations
     r_lo_a
     r_lo_b
     
-    mcc_a
-    mcc_b
-    mcc_c
-
     lin_lda1_1
     lin_lda1_2
     lin_lda2_1
@@ -87,16 +80,15 @@ Equations
 ;
 
 * Upper-level problem
-obj .. r_costs =e= c_inv*r_inst
-                 - exp_bl*sum(s,p(s)*w(s)*sum(b,k(b,s)))
-                 - (1-a)*p_rec*sum(s,p(s)*q_r(s));
-
+*obj .. r_costs =e= c_inv*r_inst - exp_bl*sum(s,p(s)*w(s)*sum(b,k(b,s)));
+obj .. r_costs =e= c_inv*r_inst - exp_bl*sum(s,p(s)*p_e(s)*q_r(s));
 inv_disc .. r_inst =e= exp_bl*sum(b,v(b));
 inv_bound .. c_max =g= c_inv*r_inst;
 
 * KKTs for lower-level problem
-grd_lg_r(s) ..                -gam_r_lo(s)+gam_r_hi(s) - lda(s) =e= 0;
-grd_lg_n(s) .. 20+0.001*q_n(s)-gam_n_lo(s)+gam_n_hi(s) - lda(s) =e= 0;
+grd_lg_r(s) ..                -gam_r_lo(s)+gam_r_hi(s) +0.001*q_r(s) =e= p_e(s);
+grd_lg_n(s) .. 20+0.001*q_n(s)-gam_n_lo(s)+gam_n_hi(s) +0.001*q_n(s) =e= p_e(s);
+
 demand(s) .. d- (q_r(s) + q_n(s)) =e= 0;
 
 n_up_a(s) .. n_max - q_n(s) =l= M*u_n_hi(s);
@@ -112,11 +104,6 @@ r_up_c(s) .. q_r(s) =l= w(s)*r_inst;
 
 r_lo_a(s) .. q_r(s) =l= M*u_r_lo(s);
 r_lo_b(s) .. gam_r_lo(s) =l= M*(1-u_r_lo(s));
-
-*** Market-clearing of certificates
-mcc_a .. sum(s, p(s)*((1-a)*q_r(s) - a*q_n(s))) =g= 0;
-mcc_b .. sum(s, p(s)*((1-a)*q_r(s) - a*q_n(s))) =l= M*u_mcc;
-mcc_c .. p_rec =l= M*(1-u_mcc);
 
 * Linearizing lambda term in objective
 set_k(b,s) .. k(b,s) =e= gam_r_hi(s) - k_hat(b,s);
@@ -141,27 +128,23 @@ r_up_a,
 r_up_b,
 r_up_c,
 r_lo_a,
-r_lo_b,
-mcc_a,
-mcc_b,
-mcc_c,
-lin_lda1_1,
-lin_lda1_2,
-lin_lda2_1,
-lin_lda2_2,
-set_k
+r_lo_b
+*lin_lda1_1,
+*lin_lda1_2,
+*lin_lda2_1,
+*lin_lda2_2,
+*set_k
 /;
 
-option miqcp=bonmin;
-
+*option solver=miles;
 solve stoch_wind_exp min r_costs using miqcp;
-display q_r.l, q_n.l, r_inst.l, lda.l, u_r_lo.l, u_r_hi.l,
+display q_r.l, q_n.l, r_inst.l, u_r_lo.l, u_r_hi.l,
 gam_r_hi.l,
 gam_r_lo.l,
 gam_n_hi.l,
 gam_n_lo.l,
 r_costs.l,
-k.l,
-k_hat.l,
+*k.l,
+*k_hat.l,
 v.l
 ;
