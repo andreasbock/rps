@@ -9,10 +9,10 @@ Sets
 Scalar
     a      RPS requirement
     n_min  minimum non-renewable production /0/
-    n_max  maximum non-renewable production /5000/
+    n_max  maximum non-renewable production /500/
     exp_bl renewable expansion blocks       /1/
     c_inv  investment cost per unit         /5/
-    c_max  investment budget                /100000/
+    c_max  investment budget                /3000/
     d      demand for electricity           /500/
     M      constant                         /100000000/
     p_rec  REC price
@@ -41,7 +41,6 @@ Variables
     r_inst  renewable capacity installed
     lda(s)  demand dual
     v(b)    binary
-*   p_rec   price of RECs
 * Dual variables
     gam_r_lo(s)
     gam_r_hi(s)
@@ -166,6 +165,11 @@ lin_lda2_2,
 set_k
 /;
 
+*a = 1.0;
+*p_rec = p_rec_param('i10');
+*solve stoch_wind_exp min r_costs using mip;
+*$exit
+
 parameter q_r_res(as,s);
 parameter q_n_res(as,s);
 parameter lda_res(as,s);
@@ -174,8 +178,9 @@ parameter r_inst_res(as);
 loop(as,
     a = (ord(as)-1)/10;
     p_rec = p_rec_param(as);
-
+    
     solve stoch_wind_exp min r_costs using mip;
+
     q_r_res(as,s) = q_r.l(s);
     q_n_res(as,s) = q_n.l(s);
     lda_res(as,s) = lda.l(s);
