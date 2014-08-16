@@ -166,20 +166,28 @@ lin_lda2_2,
 set_k
 /;
 
-a     = 0.4;
-p_rec = p_rec_param('i4');
+parameter q_r_res(as,s);
+parameter q_n_res(as,s);
+parameter lda_res(as,s);
+parameter r_inst_res(as);
 
-solve stoch_wind_exp min r_costs using mip;
+loop(as,
+    a = (ord(as)-1)/10;
+    p_rec = p_rec_param(as);
+
+    solve stoch_wind_exp min r_costs using mip;
+    q_r_res(as,s) = q_r.l(s);
+    q_n_res(as,s) = q_n.l(s);
+    lda_res(as,s) = lda.l(s);
+    r_inst_res(as) = r_inst.l;
+);
 
 display
-q_r.l,
-q_n.l,
-r_inst.l,
-lda.l,
-gam_r_hi.l,
-gam_r_lo.l,
-gam_n_hi.l,
-gam_n_lo.l,
-r_costs.l
+q_r_res,
+q_n_res,
+r_inst_res,
+lda_res
 ;
+
+
 
