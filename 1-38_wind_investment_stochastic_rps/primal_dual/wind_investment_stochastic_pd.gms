@@ -1,12 +1,12 @@
 *-- Stochastic Wind power investment --*
 
 Sets
-    s   scenarios /s0, s1/
+    s   scenarios /s0,s1/
     b   binary for expansion block discretisation /1*100/
 ;
 
 Scalar
-    a      RPS requirement                    /0.2/
+    a      RPS requirement                    /0/
     n_min  minimum non-renewable production   /0/
     n_max  maximum non-renewable production   /500/
     exp_bl renewable expansion blocks         /5/
@@ -38,13 +38,12 @@ Variables
     k(b,s)
     k_hat(b,s)
     u_n_hi(s)
-    u_n_lo(s) 
+    u_n_lo(s)
     u_r_hi(s)
     u_r_lo(s)
     u_mcc
 ;
 
-positive variable p_rec;
 positive variable q_r, q_n;
 positive variable r_inst;
 positive variable gam_r_lo, gam_r_hi, gam_n_lo, gam_n_hi;
@@ -95,24 +94,13 @@ obj .. r_costs =e= c_inv*r_inst
 inv_disc .. r_inst =e= exp_bl*sum(b,v(b));
 inv_bound .. c_max =g= c_inv*r_inst;
 
+primal_dual(s) .. 20*q_n(s) + 0.0005*power(q_n(s),2)
+    + exp_bl*w(s)*sum(b,k(b,s)) + gam_n_lo(s)*0 + gam_n_hi(s)*n_max
+    + lda(s)*d - 0.5*(gam_n_lo(s)-gam_n_hi(s)-20+lda(s)) =e= 0;
 * KKTs for lower-level problem
 grd_lg_r(s) ..                -gam_r_lo(s)+gam_r_hi(s) - lda(s) =e= 0;
 grd_lg_n(s) .. 20+0.001*q_n(s)-gam_n_lo(s)+gam_n_hi(s) - lda(s) =e= 0;
-demand(s)   .. d - (q_r(s) + q_n(s)) =e= 0;
-
-n_up_a(s) .. n_max - q_n(s) =l= M*u_n_hi(s);
-n_up_b(s) .. gam_n_hi(s)    =l= M*(1-u_n_hi(s));
-n_up_c(s) .. n_max - q_n(s) =g= 0;
-
-n_lo_a(s) .. q_n(s)      =l= M*u_n_lo(s);
-n_lo_b(s) .. gam_n_lo(s) =l= M*(1-u_n_lo(s));
-
-r_up_a(s) .. w(s)*r_inst - q_r(s) =l= M*u_r_hi(s);
-r_up_b(s) .. gam_r_hi(s)          =l= M*(1-u_r_hi(s));
-r_up_c(s) .. q_r(s)               =l= w(s)*r_inst;
-
-r_lo_a(s) .. q_r(s)      =l= M*u_r_lo(s);
-r_lo_b(s) .. gam_r_lo(s) =l= M*(1-u_r_lo(s));
+demand(s) .. d- (q_r(s) + q_n(s)) =e= 0;
 
 *** Market-clearing of certificates
 mcc_a .. sum(s, p(s)*((1-a)*q_r(s) - a*q_n(s))) =g= 0;
@@ -133,16 +121,7 @@ inv_bound,
 grd_lg_r,
 grd_lg_n,
 demand,
-n_up_a,
-n_up_b,
-n_up_c,
-n_lo_a,
-n_lo_b,
-r_up_a,
-r_up_b,
-r_up_c,
-r_lo_a,
-r_lo_b,
+primal_dual,
 mcc_a,
 mcc_b,
 mcc_c,
@@ -154,13 +133,8 @@ set_k
 /;
 
 option miqcp=bonmin;
-
 solve stoch_wind_exp min r_costs using miqcp;
-display
-q_r.l,
-q_n.l,
-r_inst.l,
-lda.l,
+display q_r.l, q_n.l, r_inst.l, lda.l,
 gam_r_hi.l,
 gam_r_lo.l,
 gam_n_hi.l,
