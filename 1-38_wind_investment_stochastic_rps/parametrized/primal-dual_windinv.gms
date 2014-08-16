@@ -1,7 +1,5 @@
 *-- Stochastic Wind power investment --*
 
-$offlisting
-
 Sets
     s   scenarios /s0, s1/
     b   binary for expansion block discretisation /1*1000/
@@ -58,7 +56,6 @@ Variables
     u_mcc
 ;
 
-*positive variable p_rec;
 positive variable q_r, q_n;
 positive variable r_inst;
 positive variable gam_r_lo, gam_r_hi, gam_n_lo, gam_n_hi;
@@ -75,18 +72,9 @@ Equations
     grd_lg_n    gradient over non-renewable lagrangian
     primal_dual primal-dual for lower-level
     demand      balance equation
-    n_up_a
-    n_up_b
-    n_up_c
-    n_lo_a
-    n_lo_b
+    n_up
+    r_up
 
-    r_up_a
-    r_up_b
-    r_up_c
-    r_lo_a
-    r_lo_b
-    
     mcc_a
     mcc_b
     mcc_c
@@ -114,19 +102,14 @@ grd_lg_r(s) ..                 - gam_r_lo(s) + gam_r_hi(s) - lda(s) =e= 0;
 grd_lg_n(s) .. 20+0.001*q_n(s) - gam_n_lo(s) + gam_n_hi(s) - lda(s) =e= 0;
 demand(s)   .. d - (q_r(s) + q_n(s)) =e= 0;
 
-n_up_a(s) .. n_max - q_n(s) =l= M*u_n_hi(s);
-n_up_b(s) .. gam_n_hi(s)    =l= M*(1-u_n_hi(s));
-n_up_c(s) .. q_n(s) =l= n_max;
+n_up(s) .. q_n(s) =l= n_max;
+r_up(s) .. q_r(s) =l= w(s)*r_inst;
 
-n_lo_a(s) .. q_n(s)      =l= M*u_n_lo(s);
-n_lo_b(s) .. gam_n_lo(s) =l= M*(1-u_n_lo(s));
-
-r_up_a(s) .. w(s)*r_inst - q_r(s) =l= M*u_r_hi(s);
-r_up_b(s) .. gam_r_hi(s)          =l= M*(1-u_r_hi(s));
-r_up_c(s) .. q_r(s)               =l= w(s)*r_inst;
-
-r_lo_a(s) .. q_r(s)      =l= M*u_r_lo(s);
-r_lo_b(s) .. gam_r_lo(s) =l= M*(1-u_r_lo(s));
+* Primal-dual formulation
+primal_dual(s) .. 20*q_n(s) + 0.0005*power(q_n(s),2)
+                + gam_r_hi(s)*w(s)*r_inst - gam_n_lo(s)*n_min
+                - gam_n_hi(s)*n_max - lda(s)*d
+                + 0.005*(gam_n_lo(s)-gam_n_hi(s)-20+lda(s)) =l= 0;
 
 *** Market-clearing of certificates
 mcc_a .. sum(s, p(s)*((1-a)*q_r(s) - a*q_n(s))) =g= 0;
@@ -147,16 +130,9 @@ inv_bound,
 grd_lg_r,
 grd_lg_n,
 demand,
-n_up_a,
-n_up_b,
-n_up_c,
-n_lo_a,
-n_lo_b,
-r_up_a,
-r_up_b,
-r_up_c,
-r_lo_a,
-r_lo_b,
+n_up,
+r_up,
+primal_dual,
 mcc_a,
 mcc_b,
 mcc_c,
@@ -177,11 +153,13 @@ parameter q_n_res(as,s);
 parameter lda_res(as,s);
 parameter r_inst_res(as);
 
+option miqcp = bonmin;
+
 loop(as,
     a = (ord(as)-1)/10;
     p_rec = p_rec_param(as);
     
-    solve stoch_wind_exp min r_costs using mip;
+    solve stoch_wind_exp min r_costs using miqcp;
 
     q_r_res(as,s) = q_r.l(s);
     q_n_res(as,s) = q_n.l(s);
@@ -193,8 +171,7 @@ display
 q_r_res,
 q_n_res,
 r_inst_res,
-lda_res,
-p_rec_param
+lda_res
 ;
 
 
