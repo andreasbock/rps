@@ -18,26 +18,27 @@ def parse(q):
 	return res
 
 def parse_sgl(line):
-	line = line.split()
-	result = [0]*11
-	count = 1
-	i = 0
-	while count <= len(line)/2:
-		dgt = line[i][1:]
-		if line[i].startswith("i") and dgt.isdigit():
-			if i==len(line)-2:
-				result[int(dgt)-1] = (float(line[i+1]))
-			else:
-				result[int(dgt)-1] = (float(line[i+1][:-1]))
-		i += 2
-		count +=1
-	return result
+    line = line.split()
+    result = [0]*11
+    count = 1
+    i = 0
+    while count <= len(line)/2:
+        dgt = line[i][1:]
+        if line[i].startswith("i") and dgt.isdigit():
+            #print line[i+1]
+            if i==len(line)-2:
+                result[int(dgt)] = (float(line[i+1]))
+            else:
+                result[int(dgt)] = (float(line[i+1][:-1]))
+        i += 2
+        count +=1
+    return result
 
 def plot_scenarios(scenarios, res):
 
     legends = ['$q_r$', '$q_n$', '$\lambda$', '$p_{REC}$', '$X_r$']
     cols    = ['green', 'red', 'blue', 'purple','black']
-    styles  = ['^', '--', 's', '-','.']
+    styles  = ['^', '--', 's', '-','*']
 
     for s in range(scenarios):
         fig, ax1 = subplots()
@@ -63,8 +64,8 @@ def plot_scenarios(scenarios, res):
         ax1.grid(True)
 
         ax1.set_xlabel(r'RPS level ($\alpha$)')
-        ax1.set_ylabel(r'Quantities ($q_r$, $q_n$)')
-        ax2.set_ylabel(r"Prices ($p$, $p_{REC}$)")
+        ax1.set_ylabel(r'Quantities ($q_r$, $q_n$, $X_r$)')
+        ax2.set_ylabel(r"Prices ($\lambda$, $p_{REC}$)")
 
         my_plots = [None]*5
 
