@@ -21,14 +21,14 @@ parameter
     rf_min   min generation per stage /0/
 
 *** Wind "power"
-    w /250/
+    w
 ;
 
 scalar M constant for Fortuny-Amat linearization /4000/;
 
 variables
     p        electricity price
-    p_rec    price of RECs
+    p_rc    price of RECs
     q_rf     renewable generation in stage t
     q_nd     non-renewable generation in stage t
     cost_nd  cost of non-renewable generation in stage t
@@ -36,8 +36,8 @@ variables
     gamma_rf_hi dual of RF max generation constraint
     gamma_nd_lo dual of ND min generation constraint
     gamma_nd_hi dual of ND max generation constraint
-*   profit_rf 
-*   profit_nd
+    profit_rf 
+    profit_nd
 ;
 
 positive variables gamma_nd_lo, gamma_nd_hi;
@@ -77,35 +77,58 @@ min_gen_nd .. q_nd - nd_min =g= 0;
 *** Market-clearing of certificates
 mcc .. (1-a)*q_rf - a*q_nd =g= 0;
 
-model compl /inv_demand,grd_nd,grd_rf,max_gen_rf.gamma_rf_hi,min_gen_rf.gamma_rf_lo,max_gen_nd.gamma_nd_hi,min_gen_nd.gamma_nd_lo,mcc.p_rec/;
+*** Profits
+*profits_rf_c .. profits_rf =e= p
+*profits_nd_c .. profits_nd =e=
+
+model compl
+/inv_demand,
+grd_nd,
+grd_rf,
+max_gen_rf.gamma_rf_hi,
+min_gen_rf.gamma_rf_lo,
+max_gen_nd.gamma_nd_hi,
+min_gen_nd.gamma_nd_lo,
+mcc.p_rec
+*profits_rf_c,
+*profits_nd_c
+/;
 
 *** Loop over all RPS levels
 set i /i1*i11/;
-
+set exp_w /e1*e50/;
 parameter q_rf_res(i);
 parameter q_nd_res(i);
 parameter p_rec_res(i);
 parameter p_res(i);
-parameter profits_rf(i);
-parameter profits_nd(i);
+parameter profits_rf_res(exp_w,i);
+parameter profits_nd_res(exp_w,i);
 scalar stop /0/;
 
+loop(exp_w,
+    w = 10*ord(exp_w);
 loop(i,
     a=(ord(i)-1)/10;
     solve compl using mcp;
+    
     q_rf_res(i)=q_rf.l; 
     q_nd_res(i)=q_nd.l; 
     p_rec_res(i)=p_rec.l; 
     p_res(i)=p.l; 
-*   profits_rf(i) = profit_rf.l;
-*   profits_nd(i) = profit_nd.l;
+    profits_rf_res(exp_w,i) = p.l * q_rf.l + (1-a)*p_rec.l*q_rf.l - 5*w;
+*    profits_rf_res(exp_w,i) = p.l * q_rf.l + (1-a)*p_rec.l*q_rf.l - 5*q_rf.l;
+    profits_nd_res(exp_w,i) = p.l * q_nd.l - a*p_rec.l*q_nd.l - 20*q_nd.l + 0.0005*power(q_nd.l,2);
+*    profits_rf_res(i) = profit_rf.l;
+*    profits_nd_res(i) = profit_nd.l;
+);
 );
 
 display
-q_rf_res,
-q_nd_res,
-p_rec_res,
-p_res
-*profits_rf,
-*profits_nd
+*q_rf_res,
+*q_nd_res,
+*p_rec_res,
+*p_res,
+profits_rf_res,
+profits_nd_res,
+w
 ;

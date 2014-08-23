@@ -12,3 +12,6 @@ v:
 
 g:
 	../new_get_data.py $(file).lst
+
+3d:
+	./plot3d.py

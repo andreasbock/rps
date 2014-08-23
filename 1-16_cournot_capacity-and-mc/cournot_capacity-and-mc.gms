@@ -21,7 +21,7 @@ parameter
     rf_min   min generation per stage /0/
 
 *** Wind "power"
-    w /250/
+    w
 ;
 
 variables
@@ -79,25 +79,38 @@ model compl /inv_demand,grd_nd,grd_rf,max_gen_rf.gamma_rf_hi,min_gen_rf.gamma_rf
 
 *** Loop over all RPS levels
 set i /i1*i11/;
+set exp_w /e1*e50/;
 
 parameter q_rf_res(i);
 parameter q_nd_res(i);
 parameter p_rec_res(i);
 parameter p_res(i);
+parameter profits_rf_res(exp_w,i);
+parameter profits_nd_res(exp_w,i);
+parameter mcc_rhs_res(exp_w,i);
 scalar stop /0/;
 
+loop(exp_w,
+    w = 10*ord(exp_w);
 loop(i,
     a=(ord(i)-1)/10;
     solve compl using mcp;
     q_rf_res(i)=q_rf.l; 
     q_nd_res(i)=q_nd.l; 
     p_rec_res(i)=p_rec.l; 
-    p_res(i)=p.l; 
+    p_res(i)=p.l;
+    profits_rf_res(exp_w,i) = p.l * q_rf.l + (1-a)*p_rec.l*q_rf.l - 5*w;
+    profits_nd_res(exp_w,i) = p.l * q_nd.l - a*p_rec.l*q_nd.l - 20*q_nd.l + 0.0005*power(q_nd.l,2);
+    mcc_rhs_res(exp_w,i)    = (1-a)*q_rf.l - a*q_nd.l;
+);
 );
 
 display
-q_rf_res,
-q_nd_res,
-p_rec_res,
-p_res
+*q_rf_res,
+*q_nd_res,
+*p_rec_res,
+*p_res,
+profits_rf_res,
+profits_nd_res,
+mcc_rhs_res
 ;
