@@ -4,16 +4,6 @@ from mpl_toolkits.mplot3d import Axes3D
 import numpy as np
 import sys
 
-#fig = plt.figure()
-#ax = fig.add_subplot(111, projection='3d')
-
-#ax.set_xlabel('RPS ($\\alpha$)')
-#ax.set_ylabel('Capacity ($q_r$)')
-#ax.set_zlabel('Profit of the renewable')
-
-rps      = np.arange(0,1.1,0.1)
-capacity = np.arange(1,502)
-
 profit_raw   ="""e1        89.990     813.109     414.574     281.496     214.913     174.949     148.301     129.263     114.984     103.876      94.990
 e2       179.960    1622.436     828.296     562.649     429.651     349.796     296.536     258.482     229.935     207.728     189.960
 e3       269.910    2427.981    1241.166     843.461     644.215     524.541     444.706     387.655     344.853     311.554     284.910
@@ -515,7 +505,6 @@ e498   42339.960   42339.960   42339.960   42339.960   42339.960   74501.796   6
 e499   42419.990   42419.990   42419.990   42419.990   42419.990   74625.949   65884.301   58928.835   53323.171   48732.654   44914.990
 e500   42500.000   42500.000   42500.000   42500.000   42500.000   42500.000   66000.000   59035.714   53421.875   48824.074   45000.000"""
 
-
 z = np.zeros(shape=(501,11))
 i = 0
 for p_raw in profit_raw.split('\n'):
@@ -524,6 +513,7 @@ for p_raw in profit_raw.split('\n'):
     i +=1
 
 
+### PLOT SLICES
 alphas = [0.3,0.5,0.7]
 
 x = np.arange(1,502)
@@ -534,15 +524,9 @@ for a in alphas:
 	ax.set_xlabel('Capacity ($w$)')
 	ax.set_ylabel('Profit of the renewable')
 	ax.plot(x,z.T[int(a*10)])
-	print z.T[3]
 	fig.savefig("foo"+str(a)+".png",bbox_inches='tight')
 
-exit()
 
-x,y = np.meshgrid(rps,capacity)
 
-ax.plot_surface(x, y, z, rstride=10, cstride=10)
-plt.show()
 
-#fig.savefig('foo.png',bbox_inches='tight')
 
