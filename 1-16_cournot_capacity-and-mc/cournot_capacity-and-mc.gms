@@ -61,13 +61,13 @@ equations
 inv_demand .. p =e= p_cst - p_lin*(q_nd + q_rf);
 
 *** KKTs from renewable
-grd_rf .. -p+gamma_rf_hi-gamma_rf_lo - (1-a)*p_rec - p_lin*q_rf =e= 0;
+grd_rf .. -p+gamma_rf_hi-gamma_rf_lo - (1-a)*p_rec + p_lin*q_rf =e= 0;
 
 max_gen_rf .. w - q_rf =g= 0;
 min_gen_rf .. q_rf - rf_min =g= 0;
 
 *** KKTs from non-renewable
-grd_nd .. - p + gamma_nd_hi - gamma_nd_lo + 20 + 0.001*q_nd  + a*p_rec - p_lin*q_nd =e= 0;
+grd_nd .. - p + gamma_nd_hi - gamma_nd_lo + 20 + 0.001*q_nd  + a*p_rec + p_lin*q_nd =e= 0;
 
 max_gen_nd .. nd_max - q_nd =g= 0;
 min_gen_nd .. q_nd - nd_min =g= 0;
