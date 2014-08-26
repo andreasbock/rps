@@ -47,13 +47,13 @@ equations
 inv_demand(s) .. p(s) =e= 100 - 0.01*(q_nd(s) + q_rf(s));
 
 *** KKTs from renewable
-grd_rf(s) .. -p(s) + gamma_rf_hi(s)-gamma_rf_lo(s) - (1-a)*p_rec - 0.01*q_rf(s) =e= 0;
+grd_rf(s) .. -p(s) + gamma_rf_hi(s)-gamma_rf_lo(s) - (1-a)*p_rec + 0.01*q_rf(s) =e= 0;
 
 max_gen_rf(s) .. w(s) - q_rf(s) =g= 0;
 min_gen_rf(s) .. q_rf(s) =g= 0;
 
 *** KKTs from non-renewable
-grd_nd(s) .. - p(s) + gamma_nd_hi(s) - gamma_nd_lo(s) + 20 + 0.001*q_nd(s)  + a*p_rec - 0.01*q_nd(s) =e= 0;
+grd_nd(s) .. - p(s) + gamma_nd_hi(s) - gamma_nd_lo(s) + 20 + 0.001*q_nd(s)  + a*p_rec + 0.01*q_nd(s) =e= 0;
 
 max_gen_nd(s) .. nd_max - q_nd(s) =g= 0;
 min_gen_nd(s) .. q_nd(s) - nd_min =g= 0;
@@ -61,7 +61,14 @@ min_gen_nd(s) .. q_nd(s) - nd_min =g= 0;
 *** Market-clearing of certificates
 mcc .. sum(s, p(s)*((1-a)*q_rf(s) - a*q_nd(s))) =g= 0;
 
-model compl /inv_demand,grd_nd,grd_rf,max_gen_rf.gamma_rf_hi,min_gen_rf.gamma_rf_lo,max_gen_nd.gamma_nd_hi,min_gen_nd.gamma_nd_lo,mcc.p_rec/;
+model compl
+/inv_demand,
+grd_nd,grd_rf,
+max_gen_rf.gamma_rf_hi,
+min_gen_rf.gamma_rf_lo,
+max_gen_nd.gamma_nd_hi,
+min_gen_nd.gamma_nd_lo,
+mcc.p_rec/;
 
 *** Loop over all RPS levels
 set i /i1*i11/;
@@ -81,8 +88,8 @@ loop(i,
 );
 
 display
-*q_rf_res,
-*q_nd_res,
-p_rec_res
-*p_res
+q_rf_res,
+q_nd_res,
+p_rec_res,
+p_res
 ;
