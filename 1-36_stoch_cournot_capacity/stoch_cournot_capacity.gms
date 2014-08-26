@@ -10,6 +10,7 @@ parameter
     nd_min    min generation per stage /0/
     w         wind power per scenario  /s0 200
                                         s1 300/
+    prb(s)    prob of scenario         /s0 0.5, s1 0.5/
 ;
 
 variables
@@ -59,7 +60,7 @@ max_gen_nd(s) .. nd_max - q_nd(s) =g= 0;
 min_gen_nd(s) .. q_nd(s) - nd_min =g= 0;
 
 *** Market-clearing of certificates
-mcc .. sum(s, p(s)*((1-a)*q_rf(s) - a*q_nd(s))) =g= 0;
+mcc .. sum(s, prb(s)*((1-a)*q_rf(s) - a*q_nd(s))) =g= 0;
 
 model compl
 /inv_demand,

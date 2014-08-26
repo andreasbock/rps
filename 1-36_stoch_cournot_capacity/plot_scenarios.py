@@ -36,7 +36,7 @@ def parse_sgl(line):
 
 def plot_scenarios(scenarios, res):
 
-    legends = ['$q_r$', '$q_n$', '$\lambda$', '$p_{REC}$']
+    legends = ['$q_r(\omega)$', '$q_n(\omega)$', '$P(Q(\omega))$', '$p_{REC}$']
     cols    = ['green', 'red', 'blue', 'purple']
     styles  = ['^', '--', 's', '-']
 
@@ -64,16 +64,18 @@ def plot_scenarios(scenarios, res):
         ax1.grid(True)
 
         ax1.set_xlabel(r'RPS level ($\alpha$)')
-        ax1.set_ylabel(r'Quantities ($q_r$, $q_n$)')
-        ax2.set_ylabel(r"Prices ($\lambda$, $p_{REC}$)")
+        ax1.set_ylabel(r'Quantities ($q_r(\omega)$, $q_n(\omega)$)')
+        ax2.set_ylabel(r"Prices ($P(Q(\omega))$, $p_{REC}$)")
 
         my_plots = [None]*4
 
         #legends = ['$q_r$', '$q_n$', '$X_r$', '$\lambda$', '$p_{REC}$']
-        for i in range(3):
+        for i in range(2):
             my_plots[i], = ax1.plot(rps, res[i][s], styles[i], c=cols[i], label=legends[i], linewidth=2)
+        i=2
+        my_plots[i], = ax2.plot(rps, res[i][s], styles[i], c=cols[i], label=legends[i], linewidth=2)
         for i in range(3,4):
-            my_plots[i], = ax1.plot(rps, res[i], styles[i], c=cols[i], label=legends[i], linewidth=2)
+            my_plots[i], = ax2.plot(rps, res[i], styles[i], c=cols[i], label=legends[i], linewidth=2)
                  
         ax1.legend(my_plots, legends, loc='upper center', bbox_to_anchor=(0.5, 1.125), fancybox=True, shadow=True, ncol=5)
         savefig(str(s)+'.png',bbox_inches='tight')
