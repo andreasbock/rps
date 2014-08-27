@@ -6,10 +6,10 @@ Sets
 ;
 
 Scalar
-    a      RPS requirement                    /0.2/
+    a      RPS requirement                    /0.8/
     n_min  minimum non-renewable production   /0/
     n_max  maximum non-renewable production   /600/
-    exp_bl renewable expansion blocks         /100/
+    exp_bl renewable expansion blocks         /1/
     c_inv  investment cost per unit           /5/
     c_max  investment budget                  /9000/
     d      demand for electricity             /500/
@@ -43,8 +43,10 @@ Variables
     u_r_hi(s)
     u_r_lo(s)
     u_mcc
+    lolz
 ;
 
+positive variable lolz;
 positive variable p_rec;
 positive variable q_r, q_n;
 positive variable r_inst;
@@ -93,7 +95,7 @@ Equations
 * Upper-level problem
 obj .. r_costs =e= c_inv*r_inst
                  - exp_bl*sum(s,p(s)*w(s)*sum(b,k(b,s)))
-                 - (1-a)*p_rec*sum(s,p(s)*q_r(s));
+                 - (1-a)*p_rec*sum(s,p(s)*q_r(s)) - lolz;
 
 inv_disc .. r_inst =e= exp_bl*sum(b,v(b));
 inv_bound .. c_max =g= c_inv*r_inst;
@@ -163,17 +165,16 @@ option miqcp=bonmin;
 *q_n.l(s) = 600;
 solve stoch_wind_exp min r_costs using miqcp;
 display
+q_r.l,
+q_n.l,
+r_inst.l,
+lda.l,
 gam_r_hi.l,
 gam_r_lo.l,
 gam_n_hi.l,
 gam_n_lo.l,
-q_r.l,
-q_n.l,
-r_inst.l,
-p_rec.l,
-lda.l,
-r_costs.l
-*k.l,
-*k_hat.l,
-*v.l
+r_costs.l,
+k.l,
+k_hat.l,
+v.l
 ;

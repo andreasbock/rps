@@ -1,4 +1,4 @@
-file=wind_investment_stochastic
+file=wind_investment_stochastic_cournot
 
 all:
 	gams $(file).gms
@@ -12,9 +12,3 @@ v:
 
 g:
 	./new_get_data.py $(file).lst
-
-lin:
-	gams lin.gms
-
-vv:
-	vim -R lin.lst

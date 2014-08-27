@@ -9,7 +9,7 @@ set
 ;
 
 parameter
-    a           RPS requirement          /0.3/
+    a           RPS requirement          /0.6/
     w           wind power per scenario  /s0 1.2
                                           s1 1/
     c_r_inv     investment cost per renewable unit /1/
@@ -20,10 +20,10 @@ parameter
     c_n_inv_max renewable budget                   /5000/
     n_blocks    non-renewable investment blocks    /4/
     prb(s)      probability of each scenario       /s0 0.5, s1 0.5/
-    M           big M                              /100000000000/;
 ;
 
 variables
+    z
     p(s)        electricity price
     p_rec       price of RECs
     q_r(s)     renewable generation
@@ -42,29 +42,48 @@ variables
     gamma_r_hi(s) dual of RF max generation constraint
     gamma_n_lo(s) dual of ND min generation constraint
     gamma_n_hi(s) dual of ND max generation constraint
-
-
-    ll_gamma_r_lo(s) dual of RF min generation constraint
-    ll_gamma_r_hi(s) dual of RF max generation constraint
-    ll_gamma_n_lo(s) dual of ND min generation constraint
-    ll_gamma_n_hi(s) dual of ND max generation constraint
-
-    u_n_lo
-    u_r_lo
-    u_n_hi
-    u_r_hi
-
-    lda(s)
 ;
 
 positive variables gamma_n_lo, gamma_n_hi;
 positive variables gamma_r_lo, gamma_r_hi;
 
-positive variables ll_gamma_n_lo, ll_gamma_n_hi;
-positive variables ll_gamma_r_lo, ll_gamma_r_hi;
-
 positive variables p_rec;
 binary variables   v_r, v_n;
+
+equations
+    obj
+    min_r      minimum renewable generation
+    max_r      maximum renewable generation
+    min_n      minimum non-renewable generation
+    max_n      maximum non-renewable generation
+
+    inv_r_disc discretise renewable investment
+    r_budget   renewable investment budget constraint
+    inv_demand
+;
+
+obj .. z =e= sum(s, prb(s)*((1-a)*p_rec*q_r(s) -a*p_rec*q_n(s)));
+min_r(s)   .. q_r(s) =g= 0;
+max_r(s)   .. w(s)*X_r =g= q_r(s); 
+inv_r_disc .. X_r =e= r_blocks * sum(b,v_r(b));
+r_budget   .. c_r_inv_max =g= c_r_inv*X_r;
+min_n(s)   .. q_n(s) =g= 0;
+max_n(s)   .. 500 =g= q_n(s);
+inv_demand(s) .. p(s) =e= 100 - 0.01*(q_n(s) + q_r(s));
+option minlp=bonmin;
+model fun
+/obj,
+min_r,
+max_r,
+max_n,
+min_n,
+r_budget,
+inv_r_disc,
+inv_demand
+/;
+
+solve fun min z using minlp;
+$exit
 
 equations
 *** Optimisation problems of the firms
@@ -82,7 +101,7 @@ equations
     inv_n_disc discretise non-renewable investment
     n_budget   non-renewable investment budget constraint
 
-*** Cournot market complementarity problem for p_rec
+*** Cournot market complementarity problem
     grd_n      gradient over renewable lagrangian
     grd_r      gradient over non-renewable lagrangian
  
@@ -92,35 +111,7 @@ equations
 
     profit_rf_c profit of the fringe
     profit_nd_c profit of the dominant firm
-
-*** Lower-level problem equations
-    ll_grd_r
-    ll_grd_n
-
-    compl_n_lo_a
-    compl_n_lo_b
-    compl_n_hi_a
-    compl_n_hi_b
-
-    compl_r_lo_a
-    compl_r_lo_b
-    compl_r_hi_a
-    compl_r_hi_b
 ;
-
-*** Lower-level equations
-ll_grd_r(s) ..                     ll_gamma_r_hi(s) - ll_gamma_r_lo(s) - lda(s) =e= 0;
-ll_grd_n(s) .. 20 + 0.001*q_n(s) + ll_gamma_n_hi(s) - ll_gamma_n_lo(s) - lda(s) =e= 0;
-
-compl_n_lo_a(s) .. ll_gamma_n_lo(s) =l= M*(1-u_n_lo(s));
-compl_n_lo_b(s) .. q_n(s)           =l= M*u_n_lo(s);
-compl_n_hi_a(s) .. ll_gamma_n_hi(s) =l= M*(1-u_n_hi(s));
-compl_n_hi_b(s) .. X_n - q_n(s)     =l= M*u_n_hi(s);
-
-compl_r_lo_a(s) .. ll_gamma_r_lo(s) =l= M*(1-u_r_lo(s));
-compl_r_lo_b(s) .. q_r(s)           =l= M*u_r_lo(s);
-compl_r_hi_a(s) .. ll_gamma_r_hi(s) =l= M*(1-u_r_hi(s));
-compl_r_hi_b(s) .. X_r - q_r(s)     =l= M*u_r_hi(s);
 
 *** Optimisation problem of the renewable
 obj_r      .. r_costs =e= c_r_inv*X_r - sum(s, prb(s)*(p(s)*q_r(s) + (1-a)*p_rec*q_r(s)));
@@ -135,8 +126,7 @@ min_r,
 max_r,
 inv_r_disc,
 r_budget,
-
-/;
+inv_demand/;
 
 *** Optimisation problem of the non-renewable
 obj_n      .. n_costs =e= c_n_inv*X_n - sum(s, prb(s)*(p(s)*q_n(s) - a*p_rec*q_n(s)));
@@ -145,12 +135,14 @@ max_n(s)   .. X_n =g= q_n(s);
 inv_n_disc .. X_n =e= n_blocks * sum(b,v_n(b));
 n_budget   .. c_n_inv_max =g= c_n_inv*X_n;
 
+X_n.fx = 500;
 model n_invest
 /obj_n,
 min_n,
 max_n,
-inv_n_disc,
-n_budget/;
+*inv_n_disc,
+*n_budget,
+inv_demand/;
 
 *** Market optimisation problem
 *grd_r(s) .. -p(s)+gamma_r_hi(s)-gamma_r_lo(s)-(1-a)*p_rec-0.01*q_r(s) =e= 0;
@@ -159,7 +151,7 @@ grd_r(s) .. -p(s)+gamma_r_hi(s)-gamma_r_lo(s)-(1-a)*p_rec + 0.01*q_r(s) =e= 0;
 grd_n(s) .. -p(s)+gamma_n_hi(s)-gamma_n_lo(s)+20+0.001*q_n(s)+a*p_rec +0.01*q_n(s)=e=0;
 
 mcc .. sum(s, prb(s)*((1-a)*q_r(s) - a*q_n(s))) =g= 0;
-inv_demand(s) .. p(s) =e= 100 - 0.01*(q_n(s)+q_r(s));
+inv_demand(s) .. p(s) =e= 100 - 0.01*(q_n(s) + q_r(s));
 
 model cournot
 /inv_demand,
@@ -182,7 +174,7 @@ option minlp=bonmin;
 ************
 
 *** Diagonalisation algorithm
-set it number of iterations /1*2/;
+set it number of iterations /1*20/;
 parameter prev_X_r;
 parameter prev_X_n;
 parameter prev_q_n(s);
@@ -200,9 +192,9 @@ prev_q_n('s0') = 250;
 prev_q_n('s1') = 250;
 prev_q_r('s0') = 250;
 prev_q_r('s1') = 250;
-p_rec.fx = 10;
+p_rec.fx = 100;
 prev_X_r = 250;
-prev_X_n = 250;
+prev_X_n = 500;
 
 loop(it$(ord(it)>1 and not done),
     iteration = ord(it);
@@ -211,13 +203,13 @@ loop(it$(ord(it)>1 and not done),
 *** Solve each firm's optimisation problem using p, p_rec as parameters
 *   Free variables X_{r,n}
     X_r.lo = 0;
-    X_n.lo = 0;
+*   X_n.lo = 0;
     X_r.up = INF;
-    X_n.up = INF;
+*   X_n.up = INF;
 
 *** Solve for the renewable
 *   Fix non-renewable production
-    q_n.fx(s) = prev_q_n(s); 
+    q_n.fx(s) = prev_q_n(s);
     solve r_invest min r_costs using minlp;
 *   Save result
     prev_q_r(s) = q_r.l(s);
@@ -231,7 +223,7 @@ loop(it$(ord(it)>1 and not done),
 
 * Fix initial X_{r,n} levels
     X_r.fx = X_r.l;
-    X_n.fx = X_n.l;
+*   X_n.fx = X_n.l;
 
 *** Solve Cournot problem to determine p_rec
 *   Free variables p_rec and production
@@ -245,7 +237,7 @@ loop(it$(ord(it)>1 and not done),
     solve cournot using mcp;
     p_rec.fx = p_rec.l;
 
-    res_X_n(it) = X_n.l;
+*   res_X_n(it) = X_n.l;
     res_X_r(it) = X_r.l;
 
 *** Check convergence
@@ -262,10 +254,14 @@ loop(it$(ord(it)>1 and not done),
     prev_X_n = X_n.l;
 );
 
-display res_X_r, res_X_n;
+display res_X_r;
 *display X_n.l, X_r.l, q_r.l, q_n.l, p_rec.l, p.l;
 
 abort$(not done) "*----- Too many iterations ! -----*"
+
+
+
+
 
 
 

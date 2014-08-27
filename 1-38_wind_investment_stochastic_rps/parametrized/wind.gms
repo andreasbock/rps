@@ -5,35 +5,25 @@ $offlisting
 Sets
     s   scenarios /s0, s1/
     b   binary for expansion block discretisation /1*1000/
-    as  levels of RPS   /i0*i10/
+    a_range  levels of RPS   /a0*a10/
+    p_rec_range  levels of RPS   /p0*p20/
 ;
 
 Scalar
     a      RPS requirement
     n_min  minimum non-renewable production /0/
-    n_max  maximum non-renewable production /500/
-    exp_bl renewable expansion blocks       /1/
+    n_max  maximum non-renewable production /600/
+    exp_bl renewable expansion blocks       /100/
     c_inv  investment cost per unit         /5/
     c_max  investment budget                /3000/
-    d      demand for electricity           /500/
+    d      demand for electricity           /600/
     M      constant                         /100000000/
     p_rec  REC price
 ;
 
 Parameter
-    w(s)      wind production           /s0 1.5, s1 1/
+    w(s)      wind production           /s0 1.5, s1 0.9/
     p(s)      probability of scenario s /s0 0.5, s1 0.5/
-    p_rec_param(as) REC price /i0 0
-                               i1 0
-                               i2 0
-                               i3 0
-                               i4 183.438
-                               i5 149.500
-                               i6 126.111
-                               i7 109.031
-                               i8  96.016
-                               i9  85.772
-                               i10 77.500/ 
 ;
 
 Variables
@@ -56,6 +46,7 @@ Variables
     u_r_hi(s)
     u_r_lo(s)
     u_mcc
+    mz
 ;
 
 *positive variable p_rec;
@@ -99,6 +90,7 @@ Equations
 
     prim
     dual
+    mcc_r
 ;
 
 * Upper-level problem
@@ -140,6 +132,8 @@ lin_lda1_2(b,s) .. k(b,s) =l= v(b)*M;
 lin_lda2_1(b,s) .. 0 =l= k_hat(b,s);
 lin_lda2_2(b,s) .. k_hat(b,s) =l= (1-v(b))*M;
 
+mcc_r .. mz =e= sum(s, p(s)*((1-a)*q_r(s) - a*q_n(s)));
+
 model stoch_wind_exp
 /obj,
 inv_disc,
@@ -164,37 +158,60 @@ lin_lda1_1,
 lin_lda1_2,
 lin_lda2_1,
 lin_lda2_2,
-set_k
+set_k,
+mcc_r
 /;
 
-*a = 1.0;
+*a = 1;
 *p_rec = p_rec_param('i10');
 *solve stoch_wind_exp min r_costs using mip;
+*display q_r.l;
+*display q_n.l;
+*display r_inst.l;
+*display r_costs.l;
 *$exit
 
-parameter q_r_res(as,s);
-parameter q_n_res(as,s);
-parameter lda_res(as,s);
-parameter r_inst_res(as);
+parameter q_r_res(a_range,s);
+parameter q_n_res(a_range,s);
+parameter lda_res(a_range,s);
+parameter r_inst_res(a_range);
+parameter r_costs_res(a_range);
+parameter p_rec_res(a_range);
+parameter mcc_rhs_res(a_range);
 
-loop(as,
-    a = (ord(as)-1)/10;
-    p_rec = p_rec_param(as);
+scalar    prev_r_costs;
+
+loop(a_range,
+    prev_r_costs = INF;
+
+    loop(p_rec_range,
+        a     = (ord(a_range)-1)/10;
+        p_rec = (ord(p_rec_range)-1)*1000;
     
-    solve stoch_wind_exp min r_costs using mip;
+        solve stoch_wind_exp min r_costs using mip;
 
-    q_r_res(as,s) = q_r.l(s);
-    q_n_res(as,s) = q_n.l(s);
-    lda_res(as,s) = lda.l(s);
-    r_inst_res(as) = r_inst.l;
+        if (r_costs.l < prev_r_costs,
+            prev_r_costs = r_costs.l;
+
+            q_r_res(a_range,s) = q_r.l(s);
+            q_n_res(a_range,s) = q_n.l(s);
+            lda_res(a_range,s) = lda.l(s);
+            r_inst_res(a_range) = r_inst.l;
+            r_costs_res(a_range) = r_costs.l;
+            p_rec_res(a_range) = p_rec;
+            mcc_rhs_res(a_range) = sum(s, p(s)*((1-a)*q_r.l(s) - a*q_n.l(s)));
+        );
+    );
 );
 
 display
+r_costs_res,
+p_rec_res,
 q_r_res,
 q_n_res,
 r_inst_res,
 lda_res,
-p_rec_param
+mcc_rhs_res
 ;
 
 

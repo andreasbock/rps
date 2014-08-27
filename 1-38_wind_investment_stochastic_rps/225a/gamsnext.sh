@@ -1,0 +1,1 @@
+gmsgenus.run /Users/andreasbock/Dropbox/ku/rps/src/1-38_wind_investment_stochastic_rps/225a/ /Users/andreasbock/Dropbox/ku/rps/src/1-38_wind_investment_stochastic_rps/ $1 /Users/andreasbock/Dropbox/ku/rps/src/1-38_wind_investment_stochastic_rps/225a/gamscntr.dat /Applications/GAMS/gams24.3_osx_x64_64_sfx/ BONMIN

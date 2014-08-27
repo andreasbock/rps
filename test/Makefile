@@ -1,4 +1,4 @@
-file=diag_ll
+file=stoch_cournot_capacity
 
 all:
 	gams $(file).gms
@@ -11,3 +11,4 @@ v:
 	vim -R $(file).lst
 
 g:
+	./plt.py $(file).lst

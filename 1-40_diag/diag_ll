@@ -86,8 +86,12 @@ Equations
 
     prim
     dual
-    
-    coulon
+
+    min_r
+    min_n
+*** Cournot market complementarity problem for p_rec
+    grd_n      gradient over renewable lagrangian
+    grd_r      gradient over non-renewable lagrangian
 ;
 
 * Upper-level problem
@@ -129,7 +133,8 @@ lin_lda1_2(b,s) .. k(b,s) =l= v(b)*M;
 lin_lda2_1(b,s) .. 0 =l= k_hat(b,s);
 lin_lda2_2(b,s) .. k_hat(b,s) =l= (1-v(b))*M;
 
-coulon .. p_rec =l= pi_bound;
+grd_r(s) .. -p(s)+gam_r_hi(s)-gam_r_lo(s)-(1-a)*p_rec + 0.01*q_r(s) =e= 0;
+grd_n(s) .. -p(s)+gam_n_hi(s)-gam_n_lo(s)+20+0.001*q_n(s)+a*p_rec +0.01*q_n(s)=e=0;
 
 model stoch_wind_exp
 /obj,
@@ -141,7 +146,7 @@ demand,
 n_up_a,
 n_up_b,
 n_up_c,
-*n_lo_a,
+n_lo_a,
 n_lo_b,
 r_up_a,
 r_up_b,
@@ -155,25 +160,106 @@ lin_lda1_1,
 lin_lda1_2,
 lin_lda2_1,
 lin_lda2_2,
-set_k,
-coulon
+set_k
 /;
 
+min_n(s) .. q_n(s) =g= 0;
+min_r(s) .. q_r(s) =g= 0;
+
+model cournot
+/inv_demand,
+grd_n,
+grd_r,
+r_up_c.gam_r_hi,
+min_r.gam_r_lo,
+n_up_c.gam_n_hi,
+min_n.gam_n_lo,
+mcc_a.p_rec/;
+
 option miqcp=bonmin;
-*q_n.l(s) = 600;
-solve stoch_wind_exp min r_costs using miqcp;
-display
-gam_r_hi.l,
-gam_r_lo.l,
-gam_n_hi.l,
-gam_n_lo.l,
-q_r.l,
-q_n.l,
-r_inst.l,
-p_rec.l,
-lda.l,
-r_costs.l
-*k.l,
-*k_hat.l,
-*v.l
-;
+
+*** Diagonalisation algorithm
+set it number of iterations /1*2/;
+parameter prev_X_r;
+parameter prev_X_n;
+parameter prev_q_n(s);
+parameter prev_q_r(s);
+scalar error_r;
+scalar error_n;
+scalar done /0/;
+scalar iteration;
+scalar tolerance /0.1/;
+parameter res_X_r(it);
+parameter res_X_n(it);
+
+* Fix initial production and REC price
+prev_q_n('s0') = 250;
+prev_q_n('s1') = 250;
+prev_q_r('s0') = 250;
+prev_q_r('s1') = 250;
+p_rec.fx = 10;
+prev_X_r = 250;
+prev_X_n = 250;
+
+loop(it$(ord(it)>1 and not done),
+    iteration = ord(it);
+    display "*----- DIAGONALISATION ITERATION ", iteration, "-----*";
+
+*** Solve each firm's optimisation problem using p, p_rec as parameters
+*   Free variables X_{r,n}
+    X_r.lo = 0;
+*   X_n.lo = 0;
+    X_r.up = INF;
+*   X_n.up = INF;
+
+*** Solve for the renewable
+*   Fix non-renewable production
+    q_n.fx(s) = prev_q_n(s); 
+    solve r_invest min r_costs using minlp;
+*   Save result
+    prev_q_r(s) = q_r.l(s);
+
+*** Solve for the non-renewable
+*   Fix renewable production
+*   q_r.fx(s) = prev_q_r(s);
+*   solve n_invest min n_costs using minlp;
+*   Save result
+*   prev_q_n(s) = q_n.l(s);
+
+* Fix initial X_{r,n} levels
+    X_r.fx = X_r.l;
+*   X_n.fx = X_n.l;
+
+*** Solve Cournot problem to determine p_rec
+*   Free variables p_rec and production
+    q_r.lo(s) = (-INF);
+*   q_n.lo(s) = (-INF);
+    p_rec.lo  = 0;
+    q_r.up(s) = INF;
+*   q_n.up(s) = INF;
+    p_rec.up  = INF;
+
+    solve cournot using mcp;
+    p_rec.fx = p_rec.l;
+
+    res_X_n(it) = X_n.l;
+    res_X_r(it) = X_r.l;
+
+*** Check convergence
+    error_r = abs(X_r.l - prev_X_r);
+*   error_n = abs(X_n.l - prev_X_n);
+*   if (error_r < tolerance and error_n < tolerance,
+    if (error_r < tolerance,
+        display "*----- ALGORITHM CONVERGED AFTER,", iteration, "-----*";
+        done = 1;
+
+        display X_r.l, q_r.l, q_n.l, p_rec.l, p.l;
+    );
+
+    prev_X_r = X_r.l;
+);
+
+display res_X_r;
+*display X_n.l, X_r.l, q_r.l, q_n.l, p_rec.l, p.l;
+
+abort$(not done) "*----- Too many iterations ! -----*"

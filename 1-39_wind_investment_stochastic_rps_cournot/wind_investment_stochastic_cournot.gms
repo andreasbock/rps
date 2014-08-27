@@ -1,4 +1,4 @@
-*-- Stochastic Wind power investment --*
+*-- Stochastic Wind power investment using Cournot Lower-level --*
 
 Sets
     s   scenarios /s0, s1/
@@ -8,17 +8,16 @@ Sets
 Scalar
     a      RPS requirement                    /0.2/
     n_min  minimum non-renewable production   /0/
-    n_max  maximum non-renewable production   /600/
-    exp_bl renewable expansion blocks         /100/
-    c_inv  investment cost per unit           /5/
-    c_max  investment budget                  /9000/
-    d      demand for electricity             /500/
+    n_max  maximum non-renewable production   /500/
+    exp_bl renewable expansion blocks         /5/
+    c_inv  investment cost per unit           /10/
+    c_max  investment budget                  /1000/
+    d      demand for electricity             /400/
     M      constant                           /100000000/
-    pi_bound      coulon bound                /150/
 ;
 
 Parameter
-    w(s)   wind production           /s0 1.5, s1 1.0/
+    w(s)   wind production           /s0 1.3, s1 0.8/
     p(s)   probability of scenario s /s0 0.5, s1 0.5/
 ;
 
@@ -84,10 +83,7 @@ Equations
     lin_lda2_2
     set_k
 
-    prim
-    dual
-    
-    coulon
+    inv_demand
 ;
 
 * Upper-level problem
@@ -99,8 +95,8 @@ inv_disc .. r_inst =e= exp_bl*sum(b,v(b));
 inv_bound .. c_max =g= c_inv*r_inst;
 
 * KKTs for lower-level problem
-grd_lg_r(s) ..                -gam_r_lo(s)+gam_r_hi(s) + lda(s) =e= 0;
-grd_lg_n(s) .. 20+0.001*q_n(s)-gam_n_lo(s)+gam_n_hi(s) + lda(s) =e= 0;
+grd_lg_r(s) ..                  -gam_r_lo(s) +gam_r_hi(s) -(1-a)*p_rec -0.01*q_r(s) -lda(s) =e= 0;
+grd_lg_n(s) .. 20 +0.001*q_n(s) -gam_n_lo(s) +gam_n_hi(s)    +a*p_rec  -0.01*q_n(s) -lda(s) =e= 0;
 demand(s)   .. d - (q_r(s) + q_n(s)) =e= 0;
 
 n_up_a(s) .. n_max - q_n(s) =l= M*u_n_hi(s);
@@ -122,14 +118,12 @@ mcc_a .. sum(s, p(s)*((1-a)*q_r(s) - a*q_n(s))) =g= 0;
 mcc_b .. sum(s, p(s)*((1-a)*q_r(s) - a*q_n(s))) =l= M*u_mcc;
 mcc_c .. p_rec =l= M*(1-u_mcc);
 
-*** Linearizing lambda term in objective
+* Linearizing lambda term in objective
 set_k(b,s) .. k(b,s) =e= gam_r_hi(s) - k_hat(b,s);
 lin_lda1_1(b,s) .. 0 =l= k(b,s);
 lin_lda1_2(b,s) .. k(b,s) =l= v(b)*M;
 lin_lda2_1(b,s) .. 0 =l= k_hat(b,s);
 lin_lda2_2(b,s) .. k_hat(b,s) =l= (1-v(b))*M;
-
-coulon .. p_rec =l= pi_bound;
 
 model stoch_wind_exp
 /obj,
@@ -141,7 +135,7 @@ demand,
 n_up_a,
 n_up_b,
 n_up_c,
-*n_lo_a,
+n_lo_a,
 n_lo_b,
 r_up_a,
 r_up_b,
@@ -155,25 +149,23 @@ lin_lda1_1,
 lin_lda1_2,
 lin_lda2_1,
 lin_lda2_2,
-set_k,
-coulon
+set_k
 /;
 
 option miqcp=bonmin;
-*q_n.l(s) = 600;
+
 solve stoch_wind_exp min r_costs using miqcp;
 display
+q_r.l,
+q_n.l,
+r_inst.l,
+lda.l,
 gam_r_hi.l,
 gam_r_lo.l,
 gam_n_hi.l,
 gam_n_lo.l,
-q_r.l,
-q_n.l,
-r_inst.l,
-p_rec.l,
-lda.l,
-r_costs.l
-*k.l,
-*k_hat.l,
-*v.l
+r_costs.l,
+k.l,
+k_hat.l,
+v.l
 ;

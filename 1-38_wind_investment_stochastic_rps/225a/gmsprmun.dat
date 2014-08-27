@@ -1,0 +1,14 @@
+Input=/Users/andreasbock/Dropbox/ku/rps/src/1-38_wind_investment_stochastic_rps/lin.gms
+Output=/Users/andreasbock/Dropbox/ku/rps/src/1-38_wind_investment_stochastic_rps/lin.lst
+Action=R
+SubSys=/Applications/GAMS/gams24.3_osx_x64_64_sfx/gmscmpun.txt
+ScrDir=/Users/andreasbock/Dropbox/ku/rps/src/1-38_wind_investment_stochastic_rps/225a/
+SysDir=/Applications/GAMS/gams24.3_osx_x64_64_sfx/
+CurDir=/Users/andreasbock/Dropbox/ku/rps/src/1-38_wind_investment_stochastic_rps/
+WorkDir=/Users/andreasbock/Dropbox/ku/rps/src/1-38_wind_investment_stochastic_rps/
+PutDir=/Users/andreasbock/Dropbox/ku/rps/src/1-38_wind_investment_stochastic_rps/
+GridDir=/Users/andreasbock/Dropbox/ku/rps/src/1-38_wind_investment_stochastic_rps/225a/
+ScriptNext=225a/gamsnext.sh
+AppendOut=1
+LibIncDir=/Applications/GAMS/gams24.3_osx_x64_64_sfx/inclib/
+SysIncDir=/Applications/GAMS/gams24.3_osx_x64_64_sfx/

@@ -1,0 +1,3111 @@
+GAMS 24.3.1  r47218 Released Jul 31, 2014 DEX-DEG x86 64bit/MacOS X                                                                                                                                                                    08/20/14 18:35:16 Page 1
+G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
+C o m p i l a t i o n
+
+
+   1  *-- Stochastic Wind power investment --*
+   2   
+   3  Sets
+   4      s   scenarios /s0, s1/
+   5      b   binary for expansion block discretisation /1*100/
+   6  ;
+   7   
+   8  Scalar
+   9      a      RPS requirement                    /1.0/
+  10      n_min  minimum non-renewable production   /0/
+  11      n_max  maximum non-renewable production   /600/
+  12      exp_bl renewable expansion blocks         /100/
+  13      c_inv  investment cost per unit           /5/
+  14      c_max  investment budget                  /9000/
+  15      d      demand for electricity             /500/
+  16      M      constant                           /100000000/
+  17      pi_bound      coulon bound                /150/
+  18  ;
+  19   
+  20  Parameter
+  21      w(s)   wind production           /s0 1.5, s1 1.0/
+  22      p(s)   probability of scenario s /s0 0.5, s1 0.5/
+  23  ;
+  24   
+  25  Variables
+  26      r_costs objective function value
+  27      q_r(s)  renewable generation
+  28      q_n(s)  non-renewable generation
+  29      r_inst  renewable capacity installed
+  30      lda(s)  demand dual
+  31      v(b)    binary
+  32      p_rec   price of RECs
+  33  * Dual variables
+  34      gam_r_lo(s)
+  35      gam_r_hi(s)
+  36      gam_n_lo(s)
+  37      gam_n_hi(s)
+  38  * Used in linearization
+  39      k(b,s)
+  40      k_hat(b,s)
+  41      u_n_hi(s)
+  42      u_n_lo(s)
+  43      u_r_hi(s)
+  44      u_r_lo(s)
+  45      u_mcc
+  46  ;
+  47   
+  48  positive variable p_rec;
+  49  positive variable q_r, q_n;
+  50  positive variable r_inst;
+  51  positive variable gam_r_lo, gam_r_hi, gam_n_lo, gam_n_hi;
+  52  positive variable lda;
+  53   
+GAMS 24.3.1  r47218 Released Jul 31, 2014 DEX-DEG x86 64bit/MacOS X                                                                                                                                                                    08/20/14 18:35:16 Page 2
+G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
+C o m p i l a t i o n
+
+
+  54  binary variable v, u_n_hi, u_n_lo, u_r_hi, u_r_lo, u_mcc;
+  55   
+  56  Equations
+  57      obj       negative profits for renewable
+  58      inv_disc  discretise the investment size
+  59      inv_bound upper bound on investment size
+  60   
+  61      grd_lg_r  gradient over renewable lagrangian
+  62      grd_lg_n  gradient over non-renewable lagrangian
+  63      primal_dual primal-dual for lower-level
+  64      demand    balance equation
+  65      n_up_a
+  66      n_up_b
+  67      n_up_c
+  68      n_lo_a
+  69      n_lo_b
+  70   
+  71      r_up_a
+  72      r_up_b
+  73      r_up_c
+  74      r_lo_a
+  75      r_lo_b
+  76   
+  77      mcc_a
+  78      mcc_b
+  79      mcc_c
+  80   
+  81      lin_lda1_1
+  82      lin_lda1_2
+  83      lin_lda2_1
+  84      lin_lda2_2
+  85      set_k
+  86   
+  87      prim
+  88      dual
+  89   
+  90      coulon
+  91  ;
+  92   
+  93  * Upper-level problem
+  94  obj .. r_costs =e= c_inv*r_inst
+  95                   - exp_bl*sum(s,p(s)*w(s)*sum(b,k(b,s)))
+  96                   - (1-a)*p_rec*sum(s,p(s)*q_r(s));
+  97   
+  98  inv_disc .. r_inst =e= exp_bl*sum(b,v(b));
+  99  inv_bound .. c_max =g= c_inv*r_inst;
+ 100   
+ 101  * KKTs for lower-level problem
+ 102  grd_lg_r(s) ..                -gam_r_lo(s)+gam_r_hi(s) + lda(s) =e= 0;
+ 103  grd_lg_n(s) .. 20+0.001*q_n(s)-gam_n_lo(s)+gam_n_hi(s) + lda(s) =e= 0;
+ 104  demand(s)   .. d - (q_r(s) + q_n(s)) =e= 0;
+ 105   
+ 106  n_up_a(s) .. n_max - q_n(s) =l= M*u_n_hi(s);
+GAMS 24.3.1  r47218 Released Jul 31, 2014 DEX-DEG x86 64bit/MacOS X                                                                                                                                                                    08/20/14 18:35:16 Page 3
+G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
+C o m p i l a t i o n
+
+
+ 107  n_up_b(s) .. gam_n_hi(s)    =l= M*(1-u_n_hi(s));
+ 108  n_up_c(s) .. n_max - q_n(s) =g= 0;
+ 109   
+ 110  n_lo_a(s) .. q_n(s)      =l= M*u_n_lo(s);
+ 111  n_lo_b(s) .. gam_n_lo(s) =l= M*(1-u_n_lo(s));
+ 112   
+ 113  r_up_a(s) .. w(s)*r_inst - q_r(s) =l= M*u_r_hi(s);
+ 114  r_up_b(s) .. gam_r_hi(s)          =l= M*(1-u_r_hi(s));
+ 115  r_up_c(s) .. q_r(s)               =l= w(s)*r_inst;
+ 116   
+ 117  r_lo_a(s) .. q_r(s)      =l= M*u_r_lo(s);
+ 118  r_lo_b(s) .. gam_r_lo(s) =l= M*(1-u_r_lo(s));
+ 119   
+ 120  *** Market-clearing of certificates
+ 121  mcc_a .. sum(s, p(s)*((1-a)*q_r(s) - a*q_n(s))) =g= 0;
+ 122  mcc_b .. sum(s, p(s)*((1-a)*q_r(s) - a*q_n(s))) =l= M*u_mcc;
+ 123  mcc_c .. p_rec =l= M*(1-u_mcc);
+ 124   
+ 125  *** Linearizing lambda term in objective
+ 126  set_k(b,s) .. k(b,s) =e= gam_r_hi(s) - k_hat(b,s);
+ 127  lin_lda1_1(b,s) .. 0 =l= k(b,s);
+ 128  lin_lda1_2(b,s) .. k(b,s) =l= v(b)*M;
+ 129  lin_lda2_1(b,s) .. 0 =l= k_hat(b,s);
+ 130  lin_lda2_2(b,s) .. k_hat(b,s) =l= (1-v(b))*M;
+ 131   
+ 132  coulon .. p_rec =l= pi_bound;
+ 133   
+ 134  model stoch_wind_exp
+ 135  /obj,
+ 136  inv_disc,
+ 137  inv_bound,
+ 138  grd_lg_r,
+ 139  grd_lg_n,
+ 140  demand,
+ 141  n_up_a,
+ 142  n_up_b,
+ 143  n_up_c,
+ 144  *n_lo_a,
+ 145  n_lo_b,
+ 146  r_up_a,
+ 147  r_up_b,
+ 148  r_up_c,
+ 149  r_lo_a,
+ 150  r_lo_b,
+ 151  mcc_a,
+ 152  mcc_b,
+ 153  mcc_c,
+ 154  lin_lda1_1,
+ 155  lin_lda1_2,
+ 156  lin_lda2_1,
+ 157  lin_lda2_2,
+ 158  set_k,
+ 159  coulon
+GAMS 24.3.1  r47218 Released Jul 31, 2014 DEX-DEG x86 64bit/MacOS X                                                                                                                                                                    08/20/14 18:35:16 Page 4
+G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
+C o m p i l a t i o n
+
+
+ 160  /;
+ 161   
+ 162  option miqcp=bonmin;
+ 163  *q_n.l(s) = 600;
+ 164  solve stoch_wind_exp min r_costs using miqcp;
+ 165  display
+ 166  gam_r_hi.l,
+ 167  gam_r_lo.l,
+ 168  gam_n_hi.l,
+ 169  gam_n_lo.l,
+ 170  q_r.l,
+ 171  q_n.l,
+ 172  r_inst.l,
+ 173  p_rec.l,
+ 174  lda.l,
+ 175  r_costs.l
+ 176  *k.l,
+ 177  *k_hat.l,
+ 178  *v.l
+ 179  ;
+
+
+COMPILATION TIME     =        0.002 SECONDS      3 MB  24.3.1 r47218 DEX-DEG
+GAMS 24.3.1  r47218 Released Jul 31, 2014 DEX-DEG x86 64bit/MacOS X                                                                                                                                                                    08/20/14 18:35:16 Page 5
+G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
+Equation Listing    SOLVE stoch_wind_exp Using MIQCP From line 164
+
+
+---- obj  =E=  negative profits for renewable
+
+obj..  r_costs - 5*r_inst + 75*k(1,s0) + 50*k(1,s1) + 75*k(2,s0) + 50*k(2,s1) + 75*k(3,s0) + 50*k(3,s1) + 75*k(4,s0) + 50*k(4,s1) + 75*k(5,s0) + 50*k(5,s1) + 75*k(6,s0) + 50*k(6,s1) + 75*k(7,s0) + 50*k(7,s1) + 75*k(8,s0) + 50*k(8,s1) + 75*k(9,s0)
+     
+      + 50*k(9,s1) + 75*k(10,s0) + 50*k(10,s1) + 75*k(11,s0) + 50*k(11,s1) + 75*k(12,s0) + 50*k(12,s1) + 75*k(13,s0) + 50*k(13,s1) + 75*k(14,s0) + 50*k(14,s1) + 75*k(15,s0) + 50*k(15,s1) + 75*k(16,s0) + 50*k(16,s1) + 75*k(17,s0) + 50*k(17,s1)
+     
+      + 75*k(18,s0) + 50*k(18,s1) + 75*k(19,s0) + 50*k(19,s1) + 75*k(20,s0) + 50*k(20,s1) + 75*k(21,s0) + 50*k(21,s1) + 75*k(22,s0) + 50*k(22,s1) + 75*k(23,s0) + 50*k(23,s1) + 75*k(24,s0) + 50*k(24,s1) + 75*k(25,s0) + 50*k(25,s1) + 75*k(26,s0)
+     
+      + 50*k(26,s1) + 75*k(27,s0) + 50*k(27,s1) + 75*k(28,s0) + 50*k(28,s1) + 75*k(29,s0) + 50*k(29,s1) + 75*k(30,s0) + 50*k(30,s1) + 75*k(31,s0) + 50*k(31,s1) + 75*k(32,s0) + 50*k(32,s1) + 75*k(33,s0) + 50*k(33,s1) + 75*k(34,s0) + 50*k(34,s1)
+     
+      + 75*k(35,s0) + 50*k(35,s1) + 75*k(36,s0) + 50*k(36,s1) + 75*k(37,s0) + 50*k(37,s1) + 75*k(38,s0) + 50*k(38,s1) + 75*k(39,s0) + 50*k(39,s1) + 75*k(40,s0) + 50*k(40,s1) + 75*k(41,s0) + 50*k(41,s1) + 75*k(42,s0) + 50*k(42,s1) + 75*k(43,s0)
+     
+      + 50*k(43,s1) + 75*k(44,s0) + 50*k(44,s1) + 75*k(45,s0) + 50*k(45,s1) + 75*k(46,s0) + 50*k(46,s1) + 75*k(47,s0) + 50*k(47,s1) + 75*k(48,s0) + 50*k(48,s1) + 75*k(49,s0) + 50*k(49,s1) + 75*k(50,s0) + 50*k(50,s1) + 75*k(51,s0) + 50*k(51,s1)
+     
+      + 75*k(52,s0) + 50*k(52,s1) + 75*k(53,s0) + 50*k(53,s1) + 75*k(54,s0) + 50*k(54,s1) + 75*k(55,s0) + 50*k(55,s1) + 75*k(56,s0) + 50*k(56,s1) + 75*k(57,s0) + 50*k(57,s1) + 75*k(58,s0) + 50*k(58,s1) + 75*k(59,s0) + 50*k(59,s1) + 75*k(60,s0)
+     
+      + 50*k(60,s1) + 75*k(61,s0) + 50*k(61,s1) + 75*k(62,s0) + 50*k(62,s1) + 75*k(63,s0) + 50*k(63,s1) + 75*k(64,s0) + 50*k(64,s1) + 75*k(65,s0) + 50*k(65,s1) + 75*k(66,s0) + 50*k(66,s1) + 75*k(67,s0) + 50*k(67,s1) + 75*k(68,s0) + 50*k(68,s1)
+     
+      + 75*k(69,s0) + 50*k(69,s1) + 75*k(70,s0) + 50*k(70,s1) + 75*k(71,s0) + 50*k(71,s1) + 75*k(72,s0) + 50*k(72,s1) + 75*k(73,s0) + 50*k(73,s1) + 75*k(74,s0) + 50*k(74,s1) + 75*k(75,s0) + 50*k(75,s1) + 75*k(76,s0) + 50*k(76,s1) + 75*k(77,s0)
+     
+      + 50*k(77,s1) + 75*k(78,s0) + 50*k(78,s1) + 75*k(79,s0) + 50*k(79,s1) + 75*k(80,s0) + 50*k(80,s1) + 75*k(81,s0) + 50*k(81,s1) + 75*k(82,s0) + 50*k(82,s1) + 75*k(83,s0) + 50*k(83,s1) + 75*k(84,s0) + 50*k(84,s1) + 75*k(85,s0) + 50*k(85,s1)
+     
+      + 75*k(86,s0) + 50*k(86,s1) + 75*k(87,s0) + 50*k(87,s1) + 75*k(88,s0) + 50*k(88,s1) + 75*k(89,s0) + 50*k(89,s1) + 75*k(90,s0) + 50*k(90,s1) + 75*k(91,s0) + 50*k(91,s1) + 75*k(92,s0) + 50*k(92,s1) + 75*k(93,s0) + 50*k(93,s1) + 75*k(94,s0)
+     
+      + 50*k(94,s1) + 75*k(95,s0) + 50*k(95,s1) + 75*k(96,s0) + 50*k(96,s1) + 75*k(97,s0) + 50*k(97,s1) + 75*k(98,s0) + 50*k(98,s1) + 75*k(99,s0) + 50*k(99,s1) + 75*k(100,s0) + 50*k(100,s1) =E= 0 ; (LHS = 0)
+     
+
+---- inv_disc  =E=  discretise the investment size
+
+inv_disc..  r_inst - 100*v(1) - 100*v(2) - 100*v(3) - 100*v(4) - 100*v(5) - 100*v(6) - 100*v(7) - 100*v(8) - 100*v(9) - 100*v(10) - 100*v(11) - 100*v(12) - 100*v(13) - 100*v(14) - 100*v(15) - 100*v(16) - 100*v(17) - 100*v(18) - 100*v(19) - 100*v(20)
+     
+      - 100*v(21) - 100*v(22) - 100*v(23) - 100*v(24) - 100*v(25) - 100*v(26) - 100*v(27) - 100*v(28) - 100*v(29) - 100*v(30) - 100*v(31) - 100*v(32) - 100*v(33) - 100*v(34) - 100*v(35) - 100*v(36) - 100*v(37) - 100*v(38) - 100*v(39) - 100*v(40)
+     
+      - 100*v(41) - 100*v(42) - 100*v(43) - 100*v(44) - 100*v(45) - 100*v(46) - 100*v(47) - 100*v(48) - 100*v(49) - 100*v(50) - 100*v(51) - 100*v(52) - 100*v(53) - 100*v(54) - 100*v(55) - 100*v(56) - 100*v(57) - 100*v(58) - 100*v(59) - 100*v(60)
+     
+      - 100*v(61) - 100*v(62) - 100*v(63) - 100*v(64) - 100*v(65) - 100*v(66) - 100*v(67) - 100*v(68) - 100*v(69) - 100*v(70) - 100*v(71) - 100*v(72) - 100*v(73) - 100*v(74) - 100*v(75) - 100*v(76) - 100*v(77) - 100*v(78) - 100*v(79) - 100*v(80)
+     
+      - 100*v(81) - 100*v(82) - 100*v(83) - 100*v(84) - 100*v(85) - 100*v(86) - 100*v(87) - 100*v(88) - 100*v(89) - 100*v(90) - 100*v(91) - 100*v(92) - 100*v(93) - 100*v(94) - 100*v(95) - 100*v(96) - 100*v(97) - 100*v(98) - 100*v(99) - 100*v(100) =E= 0 ;
+     
+      (LHS = 0)
+     
+
+---- inv_bound  =G=  upper bound on investment size
+
+inv_bound..  - 5*r_inst =G= -9000 ; (LHS = 0)
+     
+
+---- grd_lg_r  =E=  gradient over renewable lagrangian
+
+grd_lg_r(s0)..  lda(s0) - gam_r_lo(s0) + gam_r_hi(s0) =E= 0 ; (LHS = 0)
+     
+GAMS 24.3.1  r47218 Released Jul 31, 2014 DEX-DEG x86 64bit/MacOS X                                                                                                                                                                    08/20/14 18:35:16 Page 6
+G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
+Equation Listing    SOLVE stoch_wind_exp Using MIQCP From line 164
+
+
+     grd_lg_r  =E=  gradient over renewable lagrangian
+
+grd_lg_r(s1)..  lda(s1) - gam_r_lo(s1) + gam_r_hi(s1) =E= 0 ; (LHS = 0)
+     
+
+---- grd_lg_n  =E=  gradient over non-renewable lagrangian
+
+grd_lg_n(s0)..  0.001*q_n(s0) + lda(s0) - gam_n_lo(s0) + gam_n_hi(s0) =E= -20 ; (LHS = 0, INFES = 20 ****)
+     
+grd_lg_n(s1)..  0.001*q_n(s1) + lda(s1) - gam_n_lo(s1) + gam_n_hi(s1) =E= -20 ; (LHS = 0, INFES = 20 ****)
+     
+
+---- demand  =E=  balance equation
+
+demand(s0)..  - q_r(s0) - q_n(s0) =E= -500 ; (LHS = 0, INFES = 500 ****)
+     
+demand(s1)..  - q_r(s1) - q_n(s1) =E= -500 ; (LHS = 0, INFES = 500 ****)
+     
+
+---- n_up_a  =L=  
+
+n_up_a(s0)..  - q_n(s0) - 100000000*u_n_hi(s0) =L= -600 ; (LHS = 0, INFES = 600 ****)
+     
+n_up_a(s1)..  - q_n(s1) - 100000000*u_n_hi(s1) =L= -600 ; (LHS = 0, INFES = 600 ****)
+     
+
+---- n_up_b  =L=  
+
+n_up_b(s0)..  gam_n_hi(s0) + 100000000*u_n_hi(s0) =L= 100000000 ; (LHS = 0)
+     
+n_up_b(s1)..  gam_n_hi(s1) + 100000000*u_n_hi(s1) =L= 100000000 ; (LHS = 0)
+     
+
+---- n_up_c  =G=  
+
+n_up_c(s0)..  - q_n(s0) =G= -600 ; (LHS = 0)
+     
+n_up_c(s1)..  - q_n(s1) =G= -600 ; (LHS = 0)
+     
+
+---- n_lo_b  =L=  
+
+n_lo_b(s0)..  gam_n_lo(s0) + 100000000*u_n_lo(s0) =L= 100000000 ; (LHS = 0)
+     
+n_lo_b(s1)..  gam_n_lo(s1) + 100000000*u_n_lo(s1) =L= 100000000 ; (LHS = 0)
+     
+
+---- r_up_a  =L=  
+
+r_up_a(s0)..  - q_r(s0) + 1.5*r_inst - 100000000*u_r_hi(s0) =L= 0 ; (LHS = 0)
+     
+GAMS 24.3.1  r47218 Released Jul 31, 2014 DEX-DEG x86 64bit/MacOS X                                                                                                                                                                    08/20/14 18:35:16 Page 7
+G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
+Equation Listing    SOLVE stoch_wind_exp Using MIQCP From line 164
+
+
+     r_up_a  =L=  
+
+r_up_a(s1)..  - q_r(s1) + r_inst - 100000000*u_r_hi(s1) =L= 0 ; (LHS = 0)
+     
+
+---- r_up_b  =L=  
+
+r_up_b(s0)..  gam_r_hi(s0) + 100000000*u_r_hi(s0) =L= 100000000 ; (LHS = 0)
+     
+r_up_b(s1)..  gam_r_hi(s1) + 100000000*u_r_hi(s1) =L= 100000000 ; (LHS = 0)
+     
+
+---- r_up_c  =L=  
+
+r_up_c(s0)..  q_r(s0) - 1.5*r_inst =L= 0 ; (LHS = 0)
+     
+r_up_c(s1)..  q_r(s1) - r_inst =L= 0 ; (LHS = 0)
+     
+
+---- r_lo_a  =L=  
+
+r_lo_a(s0)..  q_r(s0) - 100000000*u_r_lo(s0) =L= 0 ; (LHS = 0)
+     
+r_lo_a(s1)..  q_r(s1) - 100000000*u_r_lo(s1) =L= 0 ; (LHS = 0)
+     
+
+---- r_lo_b  =L=  
+
+r_lo_b(s0)..  gam_r_lo(s0) + 100000000*u_r_lo(s0) =L= 100000000 ; (LHS = 0)
+     
+r_lo_b(s1)..  gam_r_lo(s1) + 100000000*u_r_lo(s1) =L= 100000000 ; (LHS = 0)
+     
+
+---- mcc_a  =G=  
+
+mcc_a..  - 0.5*q_n(s0) - 0.5*q_n(s1) =G= 0 ; (LHS = 0)
+     
+
+---- mcc_b  =L=  
+
+mcc_b..  - 0.5*q_n(s0) - 0.5*q_n(s1) - 100000000*u_mcc =L= 0 ; (LHS = 0)
+     
+
+---- mcc_c  =L=  
+
+mcc_c..  p_rec + 100000000*u_mcc =L= 100000000 ; (LHS = 0)
+     
+
+---- lin_lda1_1  =L=  
+
+GAMS 24.3.1  r47218 Released Jul 31, 2014 DEX-DEG x86 64bit/MacOS X                                                                                                                                                                    08/20/14 18:35:16 Page 8
+G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
+Equation Listing    SOLVE stoch_wind_exp Using MIQCP From line 164
+
+
+     lin_lda1_1  =L=  
+
+lin_lda1_1(1,s0)..  - k(1,s0) =L= 0 ; (LHS = 0)
+     
+lin_lda1_1(1,s1)..  - k(1,s1) =L= 0 ; (LHS = 0)
+     
+lin_lda1_1(2,s0)..  - k(2,s0) =L= 0 ; (LHS = 0)
+     
+REMAINING 197 ENTRIES SKIPPED
+
+
+---- lin_lda1_2  =L=  
+
+lin_lda1_2(1,s0)..  - 100000000*v(1) + k(1,s0) =L= 0 ; (LHS = 0)
+     
+lin_lda1_2(1,s1)..  - 100000000*v(1) + k(1,s1) =L= 0 ; (LHS = 0)
+     
+lin_lda1_2(2,s0)..  - 100000000*v(2) + k(2,s0) =L= 0 ; (LHS = 0)
+     
+REMAINING 197 ENTRIES SKIPPED
+
+
+---- lin_lda2_1  =L=  
+
+lin_lda2_1(1,s0)..  - k_hat(1,s0) =L= 0 ; (LHS = 0)
+     
+lin_lda2_1(1,s1)..  - k_hat(1,s1) =L= 0 ; (LHS = 0)
+     
+lin_lda2_1(2,s0)..  - k_hat(2,s0) =L= 0 ; (LHS = 0)
+     
+REMAINING 197 ENTRIES SKIPPED
+
+
+---- lin_lda2_2  =L=  
+
+lin_lda2_2(1,s0)..  100000000*v(1) + k_hat(1,s0) =L= 100000000 ; (LHS = 0)
+     
+lin_lda2_2(1,s1)..  100000000*v(1) + k_hat(1,s1) =L= 100000000 ; (LHS = 0)
+     
+lin_lda2_2(2,s0)..  100000000*v(2) + k_hat(2,s0) =L= 100000000 ; (LHS = 0)
+     
+REMAINING 197 ENTRIES SKIPPED
+
+
+---- set_k  =E=  
+
+set_k(1,s0)..  - gam_r_hi(s0) + k(1,s0) + k_hat(1,s0) =E= 0 ; (LHS = 0)
+     
+set_k(1,s1)..  - gam_r_hi(s1) + k(1,s1) + k_hat(1,s1) =E= 0 ; (LHS = 0)
+     
+GAMS 24.3.1  r47218 Released Jul 31, 2014 DEX-DEG x86 64bit/MacOS X                                                                                                                                                                    08/20/14 18:35:16 Page 9
+G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
+Equation Listing    SOLVE stoch_wind_exp Using MIQCP From line 164
+
+
+     set_k  =E=  
+
+set_k(2,s0)..  - gam_r_hi(s0) + k(2,s0) + k_hat(2,s0) =E= 0 ; (LHS = 0)
+     
+REMAINING 197 ENTRIES SKIPPED
+
+
+---- coulon  =L=  
+
+coulon..  p_rec =L= 150 ; (LHS = 0)
+     
+GAMS 24.3.1  r47218 Released Jul 31, 2014 DEX-DEG x86 64bit/MacOS X                                                                                                                                                                   08/20/14 18:35:16 Page 10
+G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
+Column Listing      SOLVE stoch_wind_exp Using MIQCP From line 164
+
+
+---- r_costs  objective function value
+
+r_costs
+                (.LO, .L, .UP, .M = -INF, 0, +INF, 0)
+        1       obj
+
+
+---- q_r  renewable generation
+
+q_r(s0)
+                (.LO, .L, .UP, .M = 0, 0, +INF, 0)
+       -1       demand(s0)
+       -1       r_up_a(s0)
+        1       r_up_c(s0)
+        1       r_lo_a(s0)
+
+q_r(s1)
+                (.LO, .L, .UP, .M = 0, 0, +INF, 0)
+       -1       demand(s1)
+       -1       r_up_a(s1)
+        1       r_up_c(s1)
+        1       r_lo_a(s1)
+
+
+---- q_n  non-renewable generation
+
+q_n(s0)
+                (.LO, .L, .UP, .M = 0, 0, +INF, 0)
+        0.001   grd_lg_n(s0)
+       -1       demand(s0)
+       -1       n_up_a(s0)
+       -1       n_up_c(s0)
+       -0.5     mcc_a
+       -0.5     mcc_b
+
+q_n(s1)
+                (.LO, .L, .UP, .M = 0, 0, +INF, 0)
+        0.001   grd_lg_n(s1)
+       -1       demand(s1)
+       -1       n_up_a(s1)
+       -1       n_up_c(s1)
+       -0.5     mcc_a
+       -0.5     mcc_b
+
+
+---- r_inst  renewable capacity installed
+
+r_inst
+                (.LO, .L, .UP, .M = 0, 0, +INF, 0)
+       -5       obj
+        1       inv_disc
+       -5       inv_bound
+        1.5     r_up_a(s0)
+GAMS 24.3.1  r47218 Released Jul 31, 2014 DEX-DEG x86 64bit/MacOS X                                                                                                                                                                   08/20/14 18:35:16 Page 11
+G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
+Column Listing      SOLVE stoch_wind_exp Using MIQCP From line 164
+
+
+     r_inst  renewable capacity installed
+
+        1       r_up_a(s1)
+       -1.5     r_up_c(s0)
+       -1       r_up_c(s1)
+
+
+---- lda  demand dual
+
+lda(s0)
+                (.LO, .L, .UP, .M = 0, 0, +INF, 0)
+        1       grd_lg_r(s0)
+        1       grd_lg_n(s0)
+
+lda(s1)
+                (.LO, .L, .UP, .M = 0, 0, +INF, 0)
+        1       grd_lg_r(s1)
+        1       grd_lg_n(s1)
+
+
+---- v  binary
+
+v(1)
+                (.LO, .L, .UP, .M = 0, 0, 1, 0)
+     -100       inv_disc
+  -1.000000E+8  lin_lda1_2(1,s0)
+  -1.000000E+8  lin_lda1_2(1,s1)
+  1.0000000E+8  lin_lda2_2(1,s0)
+  1.0000000E+8  lin_lda2_2(1,s1)
+
+v(2)
+                (.LO, .L, .UP, .M = 0, 0, 1, 0)
+     -100       inv_disc
+  -1.000000E+8  lin_lda1_2(2,s0)
+  -1.000000E+8  lin_lda1_2(2,s1)
+  1.0000000E+8  lin_lda2_2(2,s0)
+  1.0000000E+8  lin_lda2_2(2,s1)
+
+v(3)
+                (.LO, .L, .UP, .M = 0, 0, 1, 0)
+     -100       inv_disc
+  -1.000000E+8  lin_lda1_2(3,s0)
+  -1.000000E+8  lin_lda1_2(3,s1)
+  1.0000000E+8  lin_lda2_2(3,s0)
+  1.0000000E+8  lin_lda2_2(3,s1)
+
+REMAINING 97 ENTRIES SKIPPED
+
+---- p_rec  price of RECs
+
+p_rec
+                (.LO, .L, .UP, .M = 0, 0, +INF, 0)
+        1       mcc_c
+GAMS 24.3.1  r47218 Released Jul 31, 2014 DEX-DEG x86 64bit/MacOS X                                                                                                                                                                   08/20/14 18:35:16 Page 12
+G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
+Column Listing      SOLVE stoch_wind_exp Using MIQCP From line 164
+
+
+     p_rec  price of RECs
+
+        1       coulon
+
+
+---- gam_r_lo  
+
+gam_r_lo(s0)
+                (.LO, .L, .UP, .M = 0, 0, +INF, 0)
+       -1       grd_lg_r(s0)
+        1       r_lo_b(s0)
+
+gam_r_lo(s1)
+                (.LO, .L, .UP, .M = 0, 0, +INF, 0)
+       -1       grd_lg_r(s1)
+        1       r_lo_b(s1)
+
+
+---- gam_r_hi  
+
+gam_r_hi(s0)
+                (.LO, .L, .UP, .M = 0, 0, +INF, 0)
+        1       grd_lg_r(s0)
+        1       r_up_b(s0)
+       -1       set_k(1,s0)
+       -1       set_k(2,s0)
+       -1       set_k(3,s0)
+       -1       set_k(4,s0)
+       -1       set_k(5,s0)
+       -1       set_k(6,s0)
+       -1       set_k(7,s0)
+       -1       set_k(8,s0)
+       -1       set_k(9,s0)
+       -1       set_k(10,s0)
+       -1       set_k(11,s0)
+       -1       set_k(12,s0)
+       -1       set_k(13,s0)
+       -1       set_k(14,s0)
+       -1       set_k(15,s0)
+       -1       set_k(16,s0)
+       -1       set_k(17,s0)
+       -1       set_k(18,s0)
+       -1       set_k(19,s0)
+       -1       set_k(20,s0)
+       -1       set_k(21,s0)
+       -1       set_k(22,s0)
+       -1       set_k(23,s0)
+       -1       set_k(24,s0)
+       -1       set_k(25,s0)
+       -1       set_k(26,s0)
+       -1       set_k(27,s0)
+       -1       set_k(28,s0)
+       -1       set_k(29,s0)
+GAMS 24.3.1  r47218 Released Jul 31, 2014 DEX-DEG x86 64bit/MacOS X                                                                                                                                                                   08/20/14 18:35:16 Page 13
+G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
+Column Listing      SOLVE stoch_wind_exp Using MIQCP From line 164
+
+
+     gam_r_hi  
+
+       -1       set_k(30,s0)
+       -1       set_k(31,s0)
+       -1       set_k(32,s0)
+       -1       set_k(33,s0)
+       -1       set_k(34,s0)
+       -1       set_k(35,s0)
+       -1       set_k(36,s0)
+       -1       set_k(37,s0)
+       -1       set_k(38,s0)
+       -1       set_k(39,s0)
+       -1       set_k(40,s0)
+       -1       set_k(41,s0)
+       -1       set_k(42,s0)
+       -1       set_k(43,s0)
+       -1       set_k(44,s0)
+       -1       set_k(45,s0)
+       -1       set_k(46,s0)
+       -1       set_k(47,s0)
+       -1       set_k(48,s0)
+       -1       set_k(49,s0)
+       -1       set_k(50,s0)
+       -1       set_k(51,s0)
+       -1       set_k(52,s0)
+       -1       set_k(53,s0)
+       -1       set_k(54,s0)
+       -1       set_k(55,s0)
+       -1       set_k(56,s0)
+       -1       set_k(57,s0)
+       -1       set_k(58,s0)
+       -1       set_k(59,s0)
+       -1       set_k(60,s0)
+       -1       set_k(61,s0)
+       -1       set_k(62,s0)
+       -1       set_k(63,s0)
+       -1       set_k(64,s0)
+       -1       set_k(65,s0)
+       -1       set_k(66,s0)
+       -1       set_k(67,s0)
+       -1       set_k(68,s0)
+       -1       set_k(69,s0)
+       -1       set_k(70,s0)
+       -1       set_k(71,s0)
+       -1       set_k(72,s0)
+       -1       set_k(73,s0)
+       -1       set_k(74,s0)
+       -1       set_k(75,s0)
+       -1       set_k(76,s0)
+       -1       set_k(77,s0)
+       -1       set_k(78,s0)
+       -1       set_k(79,s0)
+       -1       set_k(80,s0)
+GAMS 24.3.1  r47218 Released Jul 31, 2014 DEX-DEG x86 64bit/MacOS X                                                                                                                                                                   08/20/14 18:35:16 Page 14
+G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
+Column Listing      SOLVE stoch_wind_exp Using MIQCP From line 164
+
+
+     gam_r_hi  
+
+       -1       set_k(81,s0)
+       -1       set_k(82,s0)
+       -1       set_k(83,s0)
+       -1       set_k(84,s0)
+       -1       set_k(85,s0)
+       -1       set_k(86,s0)
+       -1       set_k(87,s0)
+       -1       set_k(88,s0)
+       -1       set_k(89,s0)
+       -1       set_k(90,s0)
+       -1       set_k(91,s0)
+       -1       set_k(92,s0)
+       -1       set_k(93,s0)
+       -1       set_k(94,s0)
+       -1       set_k(95,s0)
+       -1       set_k(96,s0)
+       -1       set_k(97,s0)
+       -1       set_k(98,s0)
+       -1       set_k(99,s0)
+       -1       set_k(100,s0)
+
+gam_r_hi(s1)
+                (.LO, .L, .UP, .M = 0, 0, +INF, 0)
+        1       grd_lg_r(s1)
+        1       r_up_b(s1)
+       -1       set_k(1,s1)
+       -1       set_k(2,s1)
+       -1       set_k(3,s1)
+       -1       set_k(4,s1)
+       -1       set_k(5,s1)
+       -1       set_k(6,s1)
+       -1       set_k(7,s1)
+       -1       set_k(8,s1)
+       -1       set_k(9,s1)
+       -1       set_k(10,s1)
+       -1       set_k(11,s1)
+       -1       set_k(12,s1)
+       -1       set_k(13,s1)
+       -1       set_k(14,s1)
+       -1       set_k(15,s1)
+       -1       set_k(16,s1)
+       -1       set_k(17,s1)
+       -1       set_k(18,s1)
+       -1       set_k(19,s1)
+       -1       set_k(20,s1)
+       -1       set_k(21,s1)
+       -1       set_k(22,s1)
+       -1       set_k(23,s1)
+       -1       set_k(24,s1)
+       -1       set_k(25,s1)
+       -1       set_k(26,s1)
+GAMS 24.3.1  r47218 Released Jul 31, 2014 DEX-DEG x86 64bit/MacOS X                                                                                                                                                                   08/20/14 18:35:16 Page 15
+G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
+Column Listing      SOLVE stoch_wind_exp Using MIQCP From line 164
+
+
+     gam_r_hi  
+
+       -1       set_k(27,s1)
+       -1       set_k(28,s1)
+       -1       set_k(29,s1)
+       -1       set_k(30,s1)
+       -1       set_k(31,s1)
+       -1       set_k(32,s1)
+       -1       set_k(33,s1)
+       -1       set_k(34,s1)
+       -1       set_k(35,s1)
+       -1       set_k(36,s1)
+       -1       set_k(37,s1)
+       -1       set_k(38,s1)
+       -1       set_k(39,s1)
+       -1       set_k(40,s1)
+       -1       set_k(41,s1)
+       -1       set_k(42,s1)
+       -1       set_k(43,s1)
+       -1       set_k(44,s1)
+       -1       set_k(45,s1)
+       -1       set_k(46,s1)
+       -1       set_k(47,s1)
+       -1       set_k(48,s1)
+       -1       set_k(49,s1)
+       -1       set_k(50,s1)
+       -1       set_k(51,s1)
+       -1       set_k(52,s1)
+       -1       set_k(53,s1)
+       -1       set_k(54,s1)
+       -1       set_k(55,s1)
+       -1       set_k(56,s1)
+       -1       set_k(57,s1)
+       -1       set_k(58,s1)
+       -1       set_k(59,s1)
+       -1       set_k(60,s1)
+       -1       set_k(61,s1)
+       -1       set_k(62,s1)
+       -1       set_k(63,s1)
+       -1       set_k(64,s1)
+       -1       set_k(65,s1)
+       -1       set_k(66,s1)
+       -1       set_k(67,s1)
+       -1       set_k(68,s1)
+       -1       set_k(69,s1)
+       -1       set_k(70,s1)
+       -1       set_k(71,s1)
+       -1       set_k(72,s1)
+       -1       set_k(73,s1)
+       -1       set_k(74,s1)
+       -1       set_k(75,s1)
+       -1       set_k(76,s1)
+       -1       set_k(77,s1)
+GAMS 24.3.1  r47218 Released Jul 31, 2014 DEX-DEG x86 64bit/MacOS X                                                                                                                                                                   08/20/14 18:35:16 Page 16
+G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
+Column Listing      SOLVE stoch_wind_exp Using MIQCP From line 164
+
+
+     gam_r_hi  
+
+       -1       set_k(78,s1)
+       -1       set_k(79,s1)
+       -1       set_k(80,s1)
+       -1       set_k(81,s1)
+       -1       set_k(82,s1)
+       -1       set_k(83,s1)
+       -1       set_k(84,s1)
+       -1       set_k(85,s1)
+       -1       set_k(86,s1)
+       -1       set_k(87,s1)
+       -1       set_k(88,s1)
+       -1       set_k(89,s1)
+       -1       set_k(90,s1)
+       -1       set_k(91,s1)
+       -1       set_k(92,s1)
+       -1       set_k(93,s1)
+       -1       set_k(94,s1)
+       -1       set_k(95,s1)
+       -1       set_k(96,s1)
+       -1       set_k(97,s1)
+       -1       set_k(98,s1)
+       -1       set_k(99,s1)
+       -1       set_k(100,s1)
+
+
+---- gam_n_lo  
+
+gam_n_lo(s0)
+                (.LO, .L, .UP, .M = 0, 0, +INF, 0)
+       -1       grd_lg_n(s0)
+        1       n_lo_b(s0)
+
+gam_n_lo(s1)
+                (.LO, .L, .UP, .M = 0, 0, +INF, 0)
+       -1       grd_lg_n(s1)
+        1       n_lo_b(s1)
+
+
+---- gam_n_hi  
+
+gam_n_hi(s0)
+                (.LO, .L, .UP, .M = 0, 0, +INF, 0)
+        1       grd_lg_n(s0)
+        1       n_up_b(s0)
+
+gam_n_hi(s1)
+                (.LO, .L, .UP, .M = 0, 0, +INF, 0)
+        1       grd_lg_n(s1)
+        1       n_up_b(s1)
+
+GAMS 24.3.1  r47218 Released Jul 31, 2014 DEX-DEG x86 64bit/MacOS X                                                                                                                                                                   08/20/14 18:35:16 Page 17
+G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
+Column Listing      SOLVE stoch_wind_exp Using MIQCP From line 164
+
+
+---- k  
+
+k(1,s0)
+                (.LO, .L, .UP, .M = -INF, 0, +INF, 0)
+       75       obj
+       -1       lin_lda1_1(1,s0)
+        1       lin_lda1_2(1,s0)
+        1       set_k(1,s0)
+
+k(1,s1)
+                (.LO, .L, .UP, .M = -INF, 0, +INF, 0)
+       50       obj
+       -1       lin_lda1_1(1,s1)
+        1       lin_lda1_2(1,s1)
+        1       set_k(1,s1)
+
+k(2,s0)
+                (.LO, .L, .UP, .M = -INF, 0, +INF, 0)
+       75       obj
+       -1       lin_lda1_1(2,s0)
+        1       lin_lda1_2(2,s0)
+        1       set_k(2,s0)
+
+REMAINING 197 ENTRIES SKIPPED
+
+---- k_hat  
+
+k_hat(1,s0)
+                (.LO, .L, .UP, .M = -INF, 0, +INF, 0)
+       -1       lin_lda2_1(1,s0)
+        1       lin_lda2_2(1,s0)
+        1       set_k(1,s0)
+
+k_hat(1,s1)
+                (.LO, .L, .UP, .M = -INF, 0, +INF, 0)
+       -1       lin_lda2_1(1,s1)
+        1       lin_lda2_2(1,s1)
+        1       set_k(1,s1)
+
+k_hat(2,s0)
+                (.LO, .L, .UP, .M = -INF, 0, +INF, 0)
+       -1       lin_lda2_1(2,s0)
+        1       lin_lda2_2(2,s0)
+        1       set_k(2,s0)
+
+REMAINING 197 ENTRIES SKIPPED
+
+---- u_n_hi  
+
+u_n_hi(s0)
+                (.LO, .L, .UP, .M = 0, 0, 1, 0)
+  -1.000000E+8  n_up_a(s0)
+  1.0000000E+8  n_up_b(s0)
+GAMS 24.3.1  r47218 Released Jul 31, 2014 DEX-DEG x86 64bit/MacOS X                                                                                                                                                                   08/20/14 18:35:16 Page 18
+G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
+Column Listing      SOLVE stoch_wind_exp Using MIQCP From line 164
+
+
+     u_n_hi  
+
+
+u_n_hi(s1)
+                (.LO, .L, .UP, .M = 0, 0, 1, 0)
+  -1.000000E+8  n_up_a(s1)
+  1.0000000E+8  n_up_b(s1)
+
+
+---- u_n_lo  
+
+u_n_lo(s0)
+                (.LO, .L, .UP, .M = 0, 0, 1, 0)
+  1.0000000E+8  n_lo_b(s0)
+
+u_n_lo(s1)
+                (.LO, .L, .UP, .M = 0, 0, 1, 0)
+  1.0000000E+8  n_lo_b(s1)
+
+
+---- u_r_hi  
+
+u_r_hi(s0)
+                (.LO, .L, .UP, .M = 0, 0, 1, 0)
+  -1.000000E+8  r_up_a(s0)
+  1.0000000E+8  r_up_b(s0)
+
+u_r_hi(s1)
+                (.LO, .L, .UP, .M = 0, 0, 1, 0)
+  -1.000000E+8  r_up_a(s1)
+  1.0000000E+8  r_up_b(s1)
+
+
+---- u_r_lo  
+
+u_r_lo(s0)
+                (.LO, .L, .UP, .M = 0, 0, 1, 0)
+  -1.000000E+8  r_lo_a(s0)
+  1.0000000E+8  r_lo_b(s0)
+
+u_r_lo(s1)
+                (.LO, .L, .UP, .M = 0, 0, 1, 0)
+  -1.000000E+8  r_lo_a(s1)
+  1.0000000E+8  r_lo_b(s1)
+
+
+---- u_mcc  
+
+u_mcc
+                (.LO, .L, .UP, .M = 0, 0, 1, 0)
+  -1.000000E+8  mcc_b
+  1.0000000E+8  mcc_c
+
+GAMS 24.3.1  r47218 Released Jul 31, 2014 DEX-DEG x86 64bit/MacOS X                                                                                                                                                                   08/20/14 18:35:16 Page 19
+G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
+Model Statistics    SOLVE stoch_wind_exp Using MIQCP From line 164
+
+
+MODEL STATISTICS
+
+BLOCKS OF EQUATIONS          24     SINGLE EQUATIONS        1,031
+BLOCKS OF VARIABLES          18     SINGLE VARIABLES          526
+NON ZERO ELEMENTS         2,166     NON LINEAR N-Z              0
+DERIVATIVE POOL              10     CONSTANT POOL              16
+CODE LENGTH                   0     DISCRETE VARIABLES        109
+
+
+GENERATION TIME      =        0.009 SECONDS      4 MB  24.3.1 r47218 DEX-DEG
+
+
+EXECUTION TIME       =        0.009 SECONDS      4 MB  24.3.1 r47218 DEX-DEG
+GAMS 24.3.1  r47218 Released Jul 31, 2014 DEX-DEG x86 64bit/MacOS X                                                                                                                                                                   08/20/14 18:35:16 Page 20
+G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
+Solution Report     SOLVE stoch_wind_exp Using MIQCP From line 164
+
+
+               S O L V E      S U M M A R Y
+
+     MODEL   stoch_wind_exp      OBJECTIVE  r_costs
+     TYPE    MIQCP               DIRECTION  MINIMIZE
+     SOLVER  BONMIN              FROM LINE  164
+
+**** SOLVER STATUS     1 Normal Completion         
+**** MODEL STATUS      8 Integer Solution          
+**** OBJECTIVE VALUE             2500.0000
+
+ RESOURCE USAGE, LIMIT          0.036      1000.000
+ ITERATION COUNT, LIMIT         1    2000000000
+ EVALUATION ERRORS             NA             0
+
+COIN-OR Bonmin   24.3.1 r47218 Released Jul 31, 2014 DEG x86 64bit/MacOS X    
+Problem is linear. Passing over to Cbc.
+
+COIN-OR CBC      24.3.1 r47218 Released Jul 31, 2014 DEG x86 64bit/MacOS X    
+
+No integer variables - nothing to do
+
+Solved to optimality (within gap tolerances optca and optcr).
+MIP solution:    2.500000e+03   (0 nodes, 0.035542 seconds)
+Best possible:   2.500000e+03
+Absolute gap:   -4.547474e-13   (absolute tolerance optca: 0)
+Relative gap:   -1.818989e-16   (relative tolerance optcr: 0.1)
+Optimal - objective value 2500
+
+                           LOWER          LEVEL          UPPER         MARGINAL
+
+---- EQU obj                 .              .              .             1.0000      
+---- EQU inv_disc            .              .              .             5.0000      
+---- EQU inv_bound      -9000.0000     -2500.0000        +INF             .          
+
+  obj  negative profits for renewable
+  inv_disc  discretise the investment size
+  inv_bound  upper bound on investment size
+
+---- EQU grd_lg_r  gradient over renewable lagrangian
+
+          LOWER          LEVEL          UPPER         MARGINAL
+
+s0          .              .              .              .          
+s1          .              .              .              .          
+
+---- EQU grd_lg_n  gradient over non-renewable lagrangian
+
+          LOWER          LEVEL          UPPER         MARGINAL
+
+s0       -20.0000       -20.0000       -20.0000         EPS         
+s1       -20.0000       -20.0000       -20.0000         EPS         
+GAMS 24.3.1  r47218 Released Jul 31, 2014 DEX-DEG x86 64bit/MacOS X                                                                                                                                                                   08/20/14 18:35:16 Page 21
+G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
+Solution Report     SOLVE stoch_wind_exp Using MIQCP From line 164
+
+
+---- EQU demand  balance equation
+
+          LOWER          LEVEL          UPPER         MARGINAL
+
+s0      -500.0000      -500.0000      -500.0000         EPS         
+s1      -500.0000      -500.0000      -500.0000         EPS         
+
+---- EQU n_up_a  
+
+          LOWER          LEVEL          UPPER         MARGINAL
+
+s0        -INF      -1.000000E+8      -600.0000          .          
+s1        -INF      -1.000000E+8      -600.0000          .          
+
+---- EQU n_up_b  
+
+          LOWER          LEVEL          UPPER         MARGINAL
+
+s0        -INF      1.0000000E+8   1.0000000E+8          .          
+s1        -INF      1.0000000E+8   1.0000000E+8          .          
+
+---- EQU n_up_c  
+
+          LOWER          LEVEL          UPPER         MARGINAL
+
+s0      -600.0000          .            +INF             .          
+s1      -600.0000          .            +INF             .          
+
+---- EQU n_lo_b  
+
+          LOWER          LEVEL          UPPER         MARGINAL
+
+s0        -INF           20.0000   1.0000000E+8          .          
+s1        -INF           20.0000   1.0000000E+8          .          
+
+---- EQU r_up_a  
+
+          LOWER          LEVEL          UPPER         MARGINAL
+
+s0        -INF      -0.999998E+8          .              .          
+s1        -INF      -1.000000E+8          .              .          
+
+---- EQU r_up_b  
+
+          LOWER          LEVEL          UPPER         MARGINAL
+
+s0        -INF      1.0000000E+8   1.0000000E+8      -375.0000      
+s1        -INF      1.0000000E+8   1.0000000E+8      -250.0000      
+GAMS 24.3.1  r47218 Released Jul 31, 2014 DEX-DEG x86 64bit/MacOS X                                                                                                                                                                   08/20/14 18:35:16 Page 22
+G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
+Solution Report     SOLVE stoch_wind_exp Using MIQCP From line 164
+
+
+---- EQU r_up_c  
+
+          LOWER          LEVEL          UPPER         MARGINAL
+
+s0        -INF         -250.0000          .              .          
+s1        -INF             .              .              .          
+
+---- EQU r_lo_a  
+
+          LOWER          LEVEL          UPPER         MARGINAL
+
+s0        -INF      -0.999995E+8          .              .          
+s1        -INF      -0.999995E+8          .              .          
+
+---- EQU r_lo_b  
+
+          LOWER          LEVEL          UPPER         MARGINAL
+
+s0        -INF      1.0000000E+8   1.0000000E+8          .          
+s1        -INF      1.0000000E+8   1.0000000E+8          .          
+
+                           LOWER          LEVEL          UPPER         MARGINAL
+
+---- EQU mcc_a               .              .            +INF             .          
+---- EQU mcc_b             -INF             .              .              .          
+---- EQU mcc_c             -INF             .       1.0000000E+8          .          
+
+---- EQU lin_lda1_1  
+
+              LOWER          LEVEL          UPPER         MARGINAL
+
+1  .s0        -INF             .              .              .          
+1  .s1        -INF             .              .              .          
+2  .s0        -INF             .              .              .          
+2  .s1        -INF             .              .              .          
+3  .s0        -INF             .              .              .          
+3  .s1        -INF             .              .              .          
+4  .s0        -INF             .              .              .          
+4  .s1        -INF             .              .              .          
+5  .s0        -INF             .              .              .          
+5  .s1        -INF             .              .              .          
+6  .s0        -INF             .              .              .          
+6  .s1        -INF             .              .              .          
+7  .s0        -INF             .              .              .          
+7  .s1        -INF             .              .              .          
+8  .s0        -INF             .              .              .          
+8  .s1        -INF             .              .              .          
+9  .s0        -INF             .              .              .          
+9  .s1        -INF             .              .              .          
+10 .s0        -INF             .              .              .          
+10 .s1        -INF             .              .              .          
+11 .s0        -INF             .              .              .          
+11 .s1        -INF             .              .              .          
+GAMS 24.3.1  r47218 Released Jul 31, 2014 DEX-DEG x86 64bit/MacOS X                                                                                                                                                                   08/20/14 18:35:16 Page 23
+G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
+Solution Report     SOLVE stoch_wind_exp Using MIQCP From line 164
+
+
+     EQU lin_lda1_1  
+
+              LOWER          LEVEL          UPPER         MARGINAL
+
+12 .s0        -INF             .              .              .          
+12 .s1        -INF             .              .              .          
+13 .s0        -INF             .              .              .          
+13 .s1        -INF             .              .              .          
+14 .s0        -INF             .              .              .          
+14 .s1        -INF             .              .              .          
+15 .s0        -INF             .              .              .          
+15 .s1        -INF             .              .              .          
+16 .s0        -INF             .              .              .          
+16 .s1        -INF             .              .              .          
+17 .s0        -INF             .              .              .          
+17 .s1        -INF             .              .              .          
+18 .s0        -INF             .              .              .          
+18 .s1        -INF             .              .              .          
+19 .s0        -INF             .              .              .          
+19 .s1        -INF             .              .              .          
+20 .s0        -INF             .              .              .          
+20 .s1        -INF             .              .              .          
+21 .s0        -INF             .              .              .          
+21 .s1        -INF             .              .              .          
+22 .s0        -INF             .              .              .          
+22 .s1        -INF             .              .              .          
+23 .s0        -INF             .              .              .          
+23 .s1        -INF             .              .              .          
+24 .s0        -INF             .              .              .          
+24 .s1        -INF             .              .              .          
+25 .s0        -INF             .              .              .          
+25 .s1        -INF             .              .              .          
+26 .s0        -INF             .              .              .          
+26 .s1        -INF             .              .              .          
+27 .s0        -INF             .              .              .          
+27 .s1        -INF             .              .              .          
+28 .s0        -INF             .              .              .          
+28 .s1        -INF             .              .              .          
+29 .s0        -INF             .              .              .          
+29 .s1        -INF             .              .              .          
+30 .s0        -INF             .              .              .          
+30 .s1        -INF             .              .              .          
+31 .s0        -INF             .              .              .          
+31 .s1        -INF             .              .              .          
+32 .s0        -INF             .              .              .          
+32 .s1        -INF             .              .              .          
+33 .s0        -INF             .              .              .          
+33 .s1        -INF             .              .              .          
+34 .s0        -INF             .              .              .          
+34 .s1        -INF             .              .              .          
+35 .s0        -INF             .              .              .          
+35 .s1        -INF             .              .              .          
+36 .s0        -INF             .              .              .          
+GAMS 24.3.1  r47218 Released Jul 31, 2014 DEX-DEG x86 64bit/MacOS X                                                                                                                                                                   08/20/14 18:35:16 Page 24
+G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
+Solution Report     SOLVE stoch_wind_exp Using MIQCP From line 164
+
+
+     EQU lin_lda1_1  
+
+              LOWER          LEVEL          UPPER         MARGINAL
+
+36 .s1        -INF             .              .              .          
+37 .s0        -INF             .              .              .          
+37 .s1        -INF             .              .              .          
+38 .s0        -INF             .              .              .          
+38 .s1        -INF             .              .              .          
+39 .s0        -INF             .              .              .          
+39 .s1        -INF             .              .              .          
+40 .s0        -INF             .              .              .          
+40 .s1        -INF             .              .              .          
+41 .s0        -INF             .              .              .          
+41 .s1        -INF             .              .              .          
+42 .s0        -INF             .              .              .          
+42 .s1        -INF             .              .              .          
+43 .s0        -INF             .              .              .          
+43 .s1        -INF             .              .              .          
+44 .s0        -INF             .              .              .          
+44 .s1        -INF             .              .              .          
+45 .s0        -INF             .              .              .          
+45 .s1        -INF             .              .              .          
+46 .s0        -INF             .              .              .          
+46 .s1        -INF             .              .              .          
+47 .s0        -INF             .              .              .          
+47 .s1        -INF             .              .              .          
+48 .s0        -INF             .              .              .          
+48 .s1        -INF             .              .              .          
+49 .s0        -INF             .              .              .          
+49 .s1        -INF             .              .              .          
+50 .s0        -INF             .              .              .          
+50 .s1        -INF             .              .              .          
+51 .s0        -INF             .              .              .          
+51 .s1        -INF             .              .              .          
+52 .s0        -INF             .              .              .          
+52 .s1        -INF             .              .              .          
+53 .s0        -INF             .              .              .          
+53 .s1        -INF             .              .              .          
+54 .s0        -INF             .              .              .          
+54 .s1        -INF             .              .              .          
+55 .s0        -INF             .              .              .          
+55 .s1        -INF             .              .              .          
+56 .s0        -INF             .              .              .          
+56 .s1        -INF             .              .              .          
+57 .s0        -INF             .              .              .          
+57 .s1        -INF             .              .              .          
+58 .s0        -INF             .              .              .          
+58 .s1        -INF             .              .              .          
+59 .s0        -INF             .              .              .          
+59 .s1        -INF             .              .              .          
+60 .s0        -INF             .              .              .          
+60 .s1        -INF             .              .              .          
+GAMS 24.3.1  r47218 Released Jul 31, 2014 DEX-DEG x86 64bit/MacOS X                                                                                                                                                                   08/20/14 18:35:16 Page 25
+G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
+Solution Report     SOLVE stoch_wind_exp Using MIQCP From line 164
+
+
+     EQU lin_lda1_1  
+
+              LOWER          LEVEL          UPPER         MARGINAL
+
+61 .s0        -INF             .              .              .          
+61 .s1        -INF             .              .              .          
+62 .s0        -INF             .              .              .          
+62 .s1        -INF             .              .              .          
+63 .s0        -INF             .              .              .          
+63 .s1        -INF             .              .              .          
+64 .s0        -INF             .              .              .          
+64 .s1        -INF             .              .              .          
+65 .s0        -INF             .              .              .          
+65 .s1        -INF             .              .              .          
+66 .s0        -INF             .              .              .          
+66 .s1        -INF             .              .              .          
+67 .s0        -INF             .              .              .          
+67 .s1        -INF             .              .              .          
+68 .s0        -INF             .              .              .          
+68 .s1        -INF             .              .              .          
+69 .s0        -INF             .              .              .          
+69 .s1        -INF             .              .              .          
+70 .s0        -INF             .              .              .          
+70 .s1        -INF             .              .              .          
+71 .s0        -INF             .              .              .          
+71 .s1        -INF             .              .              .          
+72 .s0        -INF             .              .              .          
+72 .s1        -INF             .              .              .          
+73 .s0        -INF             .              .              .          
+73 .s1        -INF             .              .              .          
+74 .s0        -INF             .              .              .          
+74 .s1        -INF             .              .              .          
+75 .s0        -INF             .              .              .          
+75 .s1        -INF             .              .              .          
+76 .s0        -INF             .              .              .          
+76 .s1        -INF             .              .              .          
+77 .s0        -INF             .              .              .          
+77 .s1        -INF             .              .              .          
+78 .s0        -INF             .              .              .          
+78 .s1        -INF             .              .              .          
+79 .s0        -INF             .              .              .          
+79 .s1        -INF             .              .              .          
+80 .s0        -INF             .              .              .          
+80 .s1        -INF             .              .              .          
+81 .s0        -INF             .              .              .          
+81 .s1        -INF             .              .              .          
+82 .s0        -INF             .              .              .          
+82 .s1        -INF             .              .              .          
+83 .s0        -INF             .              .              .          
+83 .s1        -INF             .              .              .          
+84 .s0        -INF             .              .              .          
+84 .s1        -INF             .              .              .          
+85 .s0        -INF             .              .              .          
+GAMS 24.3.1  r47218 Released Jul 31, 2014 DEX-DEG x86 64bit/MacOS X                                                                                                                                                                   08/20/14 18:35:16 Page 26
+G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
+Solution Report     SOLVE stoch_wind_exp Using MIQCP From line 164
+
+
+     EQU lin_lda1_1  
+
+              LOWER          LEVEL          UPPER         MARGINAL
+
+85 .s1        -INF             .              .              .          
+86 .s0        -INF             .              .              .          
+86 .s1        -INF             .              .              .          
+87 .s0        -INF             .              .              .          
+87 .s1        -INF             .              .              .          
+88 .s0        -INF             .              .              .          
+88 .s1        -INF             .              .              .          
+89 .s0        -INF             .              .              .          
+89 .s1        -INF             .              .              .          
+90 .s0        -INF             .              .              .          
+90 .s1        -INF             .              .              .          
+91 .s0        -INF             .              .              .          
+91 .s1        -INF             .              .              .          
+92 .s0        -INF             .              .              .          
+92 .s1        -INF             .              .              .          
+93 .s0        -INF             .              .              .          
+93 .s1        -INF             .              .              .          
+94 .s0        -INF             .              .              .          
+94 .s1        -INF             .              .              .          
+95 .s0        -INF             .              .              .          
+95 .s1        -INF             .              .              .          
+96 .s0        -INF             .              .              .          
+96 .s1        -INF             .              .              .          
+97 .s0        -INF             .              .              .          
+97 .s1        -INF             .              .              .          
+98 .s0        -INF             .              .              .          
+98 .s1        -INF             .              .              .          
+99 .s0        -INF             .              .              .          
+99 .s1        -INF             .              .              .          
+100.s0        -INF             .              .              .          
+100.s1        -INF             .              .              .          
+
+---- EQU lin_lda1_2  
+
+              LOWER          LEVEL          UPPER         MARGINAL
+
+1  .s0        -INF             .              .           -75.0000      
+1  .s1        -INF             .              .           -50.0000      
+2  .s0        -INF             .              .           -75.0000      
+2  .s1        -INF             .              .           -50.0000      
+3  .s0        -INF             .              .           -75.0000      
+3  .s1        -INF             .              .           -50.0000      
+4  .s0        -INF             .              .           -75.0000      
+4  .s1        -INF             .              .           -50.0000      
+5  .s0        -INF             .              .           -75.0000      
+5  .s1        -INF             .              .           -50.0000      
+6  .s0        -INF             .              .           -75.0000      
+6  .s1        -INF             .              .           -50.0000      
+7  .s0        -INF             .              .           -75.0000      
+GAMS 24.3.1  r47218 Released Jul 31, 2014 DEX-DEG x86 64bit/MacOS X                                                                                                                                                                   08/20/14 18:35:16 Page 27
+G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
+Solution Report     SOLVE stoch_wind_exp Using MIQCP From line 164
+
+
+     EQU lin_lda1_2  
+
+              LOWER          LEVEL          UPPER         MARGINAL
+
+7  .s1        -INF             .              .           -50.0000      
+8  .s0        -INF             .              .           -75.0000      
+8  .s1        -INF             .              .           -50.0000      
+9  .s0        -INF             .              .           -75.0000      
+9  .s1        -INF             .              .           -50.0000      
+10 .s0        -INF             .              .           -75.0000      
+10 .s1        -INF             .              .           -50.0000      
+11 .s0        -INF             .              .           -75.0000      
+11 .s1        -INF             .              .           -50.0000      
+12 .s0        -INF             .              .           -75.0000      
+12 .s1        -INF             .              .           -50.0000      
+13 .s0        -INF             .              .           -75.0000      
+13 .s1        -INF             .              .           -50.0000      
+14 .s0        -INF             .              .           -75.0000      
+14 .s1        -INF             .              .           -50.0000      
+15 .s0        -INF             .              .           -75.0000      
+15 .s1        -INF             .              .           -50.0000      
+16 .s0        -INF             .              .           -75.0000      
+16 .s1        -INF             .              .           -50.0000      
+17 .s0        -INF             .              .           -75.0000      
+17 .s1        -INF             .              .           -50.0000      
+18 .s0        -INF             .              .           -75.0000      
+18 .s1        -INF             .              .           -50.0000      
+19 .s0        -INF             .              .           -75.0000      
+19 .s1        -INF             .              .           -50.0000      
+20 .s0        -INF             .              .           -75.0000      
+20 .s1        -INF             .              .           -50.0000      
+21 .s0        -INF             .              .           -75.0000      
+21 .s1        -INF             .              .           -50.0000      
+22 .s0        -INF             .              .           -75.0000      
+22 .s1        -INF             .              .           -50.0000      
+23 .s0        -INF             .              .           -75.0000      
+23 .s1        -INF             .              .           -50.0000      
+24 .s0        -INF             .              .           -75.0000      
+24 .s1        -INF             .              .           -50.0000      
+25 .s0        -INF             .              .           -75.0000      
+25 .s1        -INF             .              .           -50.0000      
+26 .s0        -INF             .              .           -75.0000      
+26 .s1        -INF             .              .           -50.0000      
+27 .s0        -INF             .              .           -75.0000      
+27 .s1        -INF             .              .           -50.0000      
+28 .s0        -INF             .              .           -75.0000      
+28 .s1        -INF             .              .           -50.0000      
+29 .s0        -INF             .              .           -75.0000      
+29 .s1        -INF             .              .           -50.0000      
+30 .s0        -INF             .              .           -75.0000      
+30 .s1        -INF             .              .           -50.0000      
+31 .s0        -INF             .              .           -75.0000      
+31 .s1        -INF             .              .           -50.0000      
+GAMS 24.3.1  r47218 Released Jul 31, 2014 DEX-DEG x86 64bit/MacOS X                                                                                                                                                                   08/20/14 18:35:16 Page 28
+G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
+Solution Report     SOLVE stoch_wind_exp Using MIQCP From line 164
+
+
+     EQU lin_lda1_2  
+
+              LOWER          LEVEL          UPPER         MARGINAL
+
+32 .s0        -INF             .              .           -75.0000      
+32 .s1        -INF             .              .           -50.0000      
+33 .s0        -INF             .              .           -75.0000      
+33 .s1        -INF             .              .           -50.0000      
+34 .s0        -INF             .              .           -75.0000      
+34 .s1        -INF             .              .           -50.0000      
+35 .s0        -INF             .              .           -75.0000      
+35 .s1        -INF             .              .           -50.0000      
+36 .s0        -INF             .              .           -75.0000      
+36 .s1        -INF             .              .           -50.0000      
+37 .s0        -INF             .              .           -75.0000      
+37 .s1        -INF             .              .           -50.0000      
+38 .s0        -INF             .              .           -75.0000      
+38 .s1        -INF             .              .           -50.0000      
+39 .s0        -INF             .              .           -75.0000      
+39 .s1        -INF             .              .           -50.0000      
+40 .s0        -INF             .              .           -75.0000      
+40 .s1        -INF             .              .           -50.0000      
+41 .s0        -INF             .              .           -75.0000      
+41 .s1        -INF             .              .           -50.0000      
+42 .s0        -INF             .              .           -75.0000      
+42 .s1        -INF             .              .           -50.0000      
+43 .s0        -INF             .              .           -75.0000      
+43 .s1        -INF             .              .           -50.0000      
+44 .s0        -INF             .              .           -75.0000      
+44 .s1        -INF             .              .           -50.0000      
+45 .s0        -INF             .              .           -75.0000      
+45 .s1        -INF             .              .           -50.0000      
+46 .s0        -INF             .              .           -75.0000      
+46 .s1        -INF             .              .           -50.0000      
+47 .s0        -INF             .              .           -75.0000      
+47 .s1        -INF             .              .           -50.0000      
+48 .s0        -INF             .              .           -75.0000      
+48 .s1        -INF             .              .           -50.0000      
+49 .s0        -INF             .              .           -75.0000      
+49 .s1        -INF             .              .           -50.0000      
+50 .s0        -INF      -1.000000E+8          .              .          
+50 .s1        -INF      -1.000000E+8          .              .          
+51 .s0        -INF             .              .           -75.0000      
+51 .s1        -INF             .              .           -50.0000      
+52 .s0        -INF             .              .           -75.0000      
+52 .s1        -INF             .              .           -50.0000      
+53 .s0        -INF             .              .           -75.0000      
+53 .s1        -INF             .              .           -50.0000      
+54 .s0        -INF             .              .           -75.0000      
+54 .s1        -INF             .              .           -50.0000      
+55 .s0        -INF             .              .           -75.0000      
+55 .s1        -INF             .              .           -50.0000      
+56 .s0        -INF             .              .           -75.0000      
+GAMS 24.3.1  r47218 Released Jul 31, 2014 DEX-DEG x86 64bit/MacOS X                                                                                                                                                                   08/20/14 18:35:16 Page 29
+G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
+Solution Report     SOLVE stoch_wind_exp Using MIQCP From line 164
+
+
+     EQU lin_lda1_2  
+
+              LOWER          LEVEL          UPPER         MARGINAL
+
+56 .s1        -INF             .              .           -50.0000      
+57 .s0        -INF             .              .           -75.0000      
+57 .s1        -INF             .              .           -50.0000      
+58 .s0        -INF             .              .           -75.0000      
+58 .s1        -INF             .              .           -50.0000      
+59 .s0        -INF             .              .           -75.0000      
+59 .s1        -INF             .              .           -50.0000      
+60 .s0        -INF             .              .           -75.0000      
+60 .s1        -INF             .              .           -50.0000      
+61 .s0        -INF             .              .           -75.0000      
+61 .s1        -INF             .              .           -50.0000      
+62 .s0        -INF             .              .           -75.0000      
+62 .s1        -INF             .              .           -50.0000      
+63 .s0        -INF             .              .           -75.0000      
+63 .s1        -INF             .              .           -50.0000      
+64 .s0        -INF             .              .           -75.0000      
+64 .s1        -INF             .              .           -50.0000      
+65 .s0        -INF      -1.000000E+8          .              .          
+65 .s1        -INF      -1.000000E+8          .              .          
+66 .s0        -INF      -1.000000E+8          .              .          
+66 .s1        -INF      -1.000000E+8          .              .          
+67 .s0        -INF      -1.000000E+8          .              .          
+67 .s1        -INF      -1.000000E+8          .              .          
+68 .s0        -INF      -1.000000E+8          .              .          
+68 .s1        -INF      -1.000000E+8          .              .          
+69 .s0        -INF             .              .           -75.0000      
+69 .s1        -INF             .              .           -50.0000      
+70 .s0        -INF             .              .           -75.0000      
+70 .s1        -INF             .              .           -50.0000      
+71 .s0        -INF             .              .           -75.0000      
+71 .s1        -INF             .              .           -50.0000      
+72 .s0        -INF             .              .           -75.0000      
+72 .s1        -INF             .              .           -50.0000      
+73 .s0        -INF             .              .           -75.0000      
+73 .s1        -INF             .              .           -50.0000      
+74 .s0        -INF             .              .           -75.0000      
+74 .s1        -INF             .              .           -50.0000      
+75 .s0        -INF             .              .           -75.0000      
+75 .s1        -INF             .              .           -50.0000      
+76 .s0        -INF             .              .           -75.0000      
+76 .s1        -INF             .              .           -50.0000      
+77 .s0        -INF             .              .           -75.0000      
+77 .s1        -INF             .              .           -50.0000      
+78 .s0        -INF             .              .           -75.0000      
+78 .s1        -INF             .              .           -50.0000      
+79 .s0        -INF             .              .           -75.0000      
+79 .s1        -INF             .              .           -50.0000      
+80 .s0        -INF             .              .           -75.0000      
+80 .s1        -INF             .              .           -50.0000      
+GAMS 24.3.1  r47218 Released Jul 31, 2014 DEX-DEG x86 64bit/MacOS X                                                                                                                                                                   08/20/14 18:35:16 Page 30
+G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
+Solution Report     SOLVE stoch_wind_exp Using MIQCP From line 164
+
+
+     EQU lin_lda1_2  
+
+              LOWER          LEVEL          UPPER         MARGINAL
+
+81 .s0        -INF             .              .           -75.0000      
+81 .s1        -INF             .              .           -50.0000      
+82 .s0        -INF             .              .           -75.0000      
+82 .s1        -INF             .              .           -50.0000      
+83 .s0        -INF             .              .           -75.0000      
+83 .s1        -INF             .              .           -50.0000      
+84 .s0        -INF             .              .           -75.0000      
+84 .s1        -INF             .              .           -50.0000      
+85 .s0        -INF             .              .           -75.0000      
+85 .s1        -INF             .              .           -50.0000      
+86 .s0        -INF             .              .           -75.0000      
+86 .s1        -INF             .              .           -50.0000      
+87 .s0        -INF             .              .           -75.0000      
+87 .s1        -INF             .              .           -50.0000      
+88 .s0        -INF             .              .           -75.0000      
+88 .s1        -INF             .              .           -50.0000      
+89 .s0        -INF             .              .           -75.0000      
+89 .s1        -INF             .              .           -50.0000      
+90 .s0        -INF             .              .           -75.0000      
+90 .s1        -INF             .              .           -50.0000      
+91 .s0        -INF             .              .           -75.0000      
+91 .s1        -INF             .              .           -50.0000      
+92 .s0        -INF             .              .           -75.0000      
+92 .s1        -INF             .              .           -50.0000      
+93 .s0        -INF             .              .           -75.0000      
+93 .s1        -INF             .              .           -50.0000      
+94 .s0        -INF             .              .           -75.0000      
+94 .s1        -INF             .              .           -50.0000      
+95 .s0        -INF             .              .           -75.0000      
+95 .s1        -INF             .              .           -50.0000      
+96 .s0        -INF             .              .           -75.0000      
+96 .s1        -INF             .              .           -50.0000      
+97 .s0        -INF             .              .           -75.0000      
+97 .s1        -INF             .              .           -50.0000      
+98 .s0        -INF             .              .           -75.0000      
+98 .s1        -INF             .              .           -50.0000      
+99 .s0        -INF             .              .           -75.0000      
+99 .s1        -INF             .              .           -50.0000      
+100.s0        -INF             .              .           -75.0000      
+100.s1        -INF             .              .           -50.0000      
+
+---- EQU lin_lda2_1  
+
+              LOWER          LEVEL          UPPER         MARGINAL
+
+1  .s0        -INF             .              .             EPS         
+1  .s1        -INF             .              .             EPS         
+2  .s0        -INF             .              .             EPS         
+2  .s1        -INF             .              .             EPS         
+GAMS 24.3.1  r47218 Released Jul 31, 2014 DEX-DEG x86 64bit/MacOS X                                                                                                                                                                   08/20/14 18:35:16 Page 31
+G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
+Solution Report     SOLVE stoch_wind_exp Using MIQCP From line 164
+
+
+     EQU lin_lda2_1  
+
+              LOWER          LEVEL          UPPER         MARGINAL
+
+3  .s0        -INF             .              .             EPS         
+3  .s1        -INF             .              .             EPS         
+4  .s0        -INF             .              .             EPS         
+4  .s1        -INF             .              .             EPS         
+5  .s0        -INF             .              .             EPS         
+5  .s1        -INF             .              .             EPS         
+6  .s0        -INF             .              .             EPS         
+6  .s1        -INF             .              .             EPS         
+7  .s0        -INF             .              .             EPS         
+7  .s1        -INF             .              .             EPS         
+8  .s0        -INF             .              .             EPS         
+8  .s1        -INF             .              .             EPS         
+9  .s0        -INF             .              .             EPS         
+9  .s1        -INF             .              .             EPS         
+10 .s0        -INF             .              .             EPS         
+10 .s1        -INF             .              .             EPS         
+11 .s0        -INF             .              .             EPS         
+11 .s1        -INF             .              .             EPS         
+12 .s0        -INF             .              .             EPS         
+12 .s1        -INF             .              .             EPS         
+13 .s0        -INF             .              .             EPS         
+13 .s1        -INF             .              .             EPS         
+14 .s0        -INF             .              .             EPS         
+14 .s1        -INF             .              .             EPS         
+15 .s0        -INF             .              .             EPS         
+15 .s1        -INF             .              .             EPS         
+16 .s0        -INF             .              .             EPS         
+16 .s1        -INF             .              .             EPS         
+17 .s0        -INF             .              .             EPS         
+17 .s1        -INF             .              .             EPS         
+18 .s0        -INF             .              .             EPS         
+18 .s1        -INF             .              .             EPS         
+19 .s0        -INF             .              .             EPS         
+19 .s1        -INF             .              .             EPS         
+20 .s0        -INF             .              .             EPS         
+20 .s1        -INF             .              .             EPS         
+21 .s0        -INF             .              .             EPS         
+21 .s1        -INF             .              .             EPS         
+22 .s0        -INF             .              .             EPS         
+22 .s1        -INF             .              .             EPS         
+23 .s0        -INF             .              .             EPS         
+23 .s1        -INF             .              .             EPS         
+24 .s0        -INF             .              .             EPS         
+24 .s1        -INF             .              .             EPS         
+25 .s0        -INF             .              .             EPS         
+25 .s1        -INF             .              .             EPS         
+26 .s0        -INF             .              .             EPS         
+26 .s1        -INF             .              .             EPS         
+27 .s0        -INF             .              .             EPS         
+GAMS 24.3.1  r47218 Released Jul 31, 2014 DEX-DEG x86 64bit/MacOS X                                                                                                                                                                   08/20/14 18:35:16 Page 32
+G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
+Solution Report     SOLVE stoch_wind_exp Using MIQCP From line 164
+
+
+     EQU lin_lda2_1  
+
+              LOWER          LEVEL          UPPER         MARGINAL
+
+27 .s1        -INF             .              .             EPS         
+28 .s0        -INF             .              .             EPS         
+28 .s1        -INF             .              .             EPS         
+29 .s0        -INF             .              .             EPS         
+29 .s1        -INF             .              .             EPS         
+30 .s0        -INF             .              .             EPS         
+30 .s1        -INF             .              .             EPS         
+31 .s0        -INF             .              .             EPS         
+31 .s1        -INF             .              .             EPS         
+32 .s0        -INF             .              .             EPS         
+32 .s1        -INF             .              .             EPS         
+33 .s0        -INF             .              .             EPS         
+33 .s1        -INF             .              .             EPS         
+34 .s0        -INF             .              .             EPS         
+34 .s1        -INF             .              .             EPS         
+35 .s0        -INF             .              .             EPS         
+35 .s1        -INF             .              .             EPS         
+36 .s0        -INF             .              .             EPS         
+36 .s1        -INF             .              .             EPS         
+37 .s0        -INF             .              .             EPS         
+37 .s1        -INF             .              .             EPS         
+38 .s0        -INF             .              .             EPS         
+38 .s1        -INF             .              .             EPS         
+39 .s0        -INF             .              .             EPS         
+39 .s1        -INF             .              .             EPS         
+40 .s0        -INF             .              .             EPS         
+40 .s1        -INF             .              .             EPS         
+41 .s0        -INF             .              .             EPS         
+41 .s1        -INF             .              .             EPS         
+42 .s0        -INF             .              .             EPS         
+42 .s1        -INF             .              .             EPS         
+43 .s0        -INF             .              .             EPS         
+43 .s1        -INF             .              .             EPS         
+44 .s0        -INF             .              .             EPS         
+44 .s1        -INF             .              .             EPS         
+45 .s0        -INF             .              .             EPS         
+45 .s1        -INF             .              .             EPS         
+46 .s0        -INF             .              .             EPS         
+46 .s1        -INF             .              .             EPS         
+47 .s0        -INF             .              .             EPS         
+47 .s1        -INF             .              .             EPS         
+48 .s0        -INF             .              .             EPS         
+48 .s1        -INF             .              .             EPS         
+49 .s0        -INF             .              .             EPS         
+49 .s1        -INF             .              .             EPS         
+50 .s0        -INF             .              .           -75.0000      
+50 .s1        -INF             .              .           -50.0000      
+51 .s0        -INF             .              .             EPS         
+51 .s1        -INF             .              .             EPS         
+GAMS 24.3.1  r47218 Released Jul 31, 2014 DEX-DEG x86 64bit/MacOS X                                                                                                                                                                   08/20/14 18:35:16 Page 33
+G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
+Solution Report     SOLVE stoch_wind_exp Using MIQCP From line 164
+
+
+     EQU lin_lda2_1  
+
+              LOWER          LEVEL          UPPER         MARGINAL
+
+52 .s0        -INF             .              .             EPS         
+52 .s1        -INF             .              .             EPS         
+53 .s0        -INF             .              .             EPS         
+53 .s1        -INF             .              .             EPS         
+54 .s0        -INF             .              .             EPS         
+54 .s1        -INF             .              .             EPS         
+55 .s0        -INF             .              .             EPS         
+55 .s1        -INF             .              .             EPS         
+56 .s0        -INF             .              .             EPS         
+56 .s1        -INF             .              .             EPS         
+57 .s0        -INF             .              .             EPS         
+57 .s1        -INF             .              .             EPS         
+58 .s0        -INF             .              .             EPS         
+58 .s1        -INF             .              .             EPS         
+59 .s0        -INF             .              .             EPS         
+59 .s1        -INF             .              .             EPS         
+60 .s0        -INF             .              .             EPS         
+60 .s1        -INF             .              .             EPS         
+61 .s0        -INF             .              .             EPS         
+61 .s1        -INF             .              .             EPS         
+62 .s0        -INF             .              .             EPS         
+62 .s1        -INF             .              .             EPS         
+63 .s0        -INF             .              .             EPS         
+63 .s1        -INF             .              .             EPS         
+64 .s0        -INF             .              .             EPS         
+64 .s1        -INF             .              .             EPS         
+65 .s0        -INF             .              .           -75.0000      
+65 .s1        -INF             .              .           -50.0000      
+66 .s0        -INF             .              .           -75.0000      
+66 .s1        -INF             .              .           -50.0000      
+67 .s0        -INF             .              .           -75.0000      
+67 .s1        -INF             .              .           -50.0000      
+68 .s0        -INF             .              .           -75.0000      
+68 .s1        -INF             .              .           -50.0000      
+69 .s0        -INF             .              .             EPS         
+69 .s1        -INF             .              .             EPS         
+70 .s0        -INF             .              .             EPS         
+70 .s1        -INF             .              .             EPS         
+71 .s0        -INF             .              .             EPS         
+71 .s1        -INF             .              .             EPS         
+72 .s0        -INF             .              .             EPS         
+72 .s1        -INF             .              .             EPS         
+73 .s0        -INF             .              .             EPS         
+73 .s1        -INF             .              .             EPS         
+74 .s0        -INF             .              .             EPS         
+74 .s1        -INF             .              .             EPS         
+75 .s0        -INF             .              .             EPS         
+75 .s1        -INF             .              .             EPS         
+76 .s0        -INF             .              .             EPS         
+GAMS 24.3.1  r47218 Released Jul 31, 2014 DEX-DEG x86 64bit/MacOS X                                                                                                                                                                   08/20/14 18:35:16 Page 34
+G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
+Solution Report     SOLVE stoch_wind_exp Using MIQCP From line 164
+
+
+     EQU lin_lda2_1  
+
+              LOWER          LEVEL          UPPER         MARGINAL
+
+76 .s1        -INF             .              .             EPS         
+77 .s0        -INF             .              .             EPS         
+77 .s1        -INF             .              .             EPS         
+78 .s0        -INF             .              .             EPS         
+78 .s1        -INF             .              .             EPS         
+79 .s0        -INF             .              .             EPS         
+79 .s1        -INF             .              .             EPS         
+80 .s0        -INF             .              .             EPS         
+80 .s1        -INF             .              .             EPS         
+81 .s0        -INF             .              .             EPS         
+81 .s1        -INF             .              .             EPS         
+82 .s0        -INF             .              .             EPS         
+82 .s1        -INF             .              .             EPS         
+83 .s0        -INF             .              .             EPS         
+83 .s1        -INF             .              .             EPS         
+84 .s0        -INF             .              .             EPS         
+84 .s1        -INF             .              .             EPS         
+85 .s0        -INF             .              .             EPS         
+85 .s1        -INF             .              .             EPS         
+86 .s0        -INF             .              .             EPS         
+86 .s1        -INF             .              .             EPS         
+87 .s0        -INF             .              .             EPS         
+87 .s1        -INF             .              .             EPS         
+88 .s0        -INF             .              .             EPS         
+88 .s1        -INF             .              .             EPS         
+89 .s0        -INF             .              .             EPS         
+89 .s1        -INF             .              .             EPS         
+90 .s0        -INF             .              .             EPS         
+90 .s1        -INF             .              .             EPS         
+91 .s0        -INF             .              .             EPS         
+91 .s1        -INF             .              .             EPS         
+92 .s0        -INF             .              .             EPS         
+92 .s1        -INF             .              .             EPS         
+93 .s0        -INF             .              .             EPS         
+93 .s1        -INF             .              .             EPS         
+94 .s0        -INF             .              .             EPS         
+94 .s1        -INF             .              .             EPS         
+95 .s0        -INF             .              .             EPS         
+95 .s1        -INF             .              .             EPS         
+96 .s0        -INF             .              .             EPS         
+96 .s1        -INF             .              .             EPS         
+97 .s0        -INF             .              .             EPS         
+97 .s1        -INF             .              .             EPS         
+98 .s0        -INF             .              .             EPS         
+98 .s1        -INF             .              .             EPS         
+99 .s0        -INF             .              .             EPS         
+99 .s1        -INF             .              .             EPS         
+100.s0        -INF             .              .             EPS         
+100.s1        -INF             .              .             EPS         
+GAMS 24.3.1  r47218 Released Jul 31, 2014 DEX-DEG x86 64bit/MacOS X                                                                                                                                                                   08/20/14 18:35:16 Page 35
+G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
+Solution Report     SOLVE stoch_wind_exp Using MIQCP From line 164
+
+
+---- EQU lin_lda2_2  
+
+              LOWER          LEVEL          UPPER         MARGINAL
+
+1  .s0        -INF             .       1.0000000E+8          .          
+1  .s1        -INF             .       1.0000000E+8          .          
+2  .s0        -INF             .       1.0000000E+8          .          
+2  .s1        -INF             .       1.0000000E+8          .          
+3  .s0        -INF             .       1.0000000E+8          .          
+3  .s1        -INF             .       1.0000000E+8          .          
+4  .s0        -INF             .       1.0000000E+8          .          
+4  .s1        -INF             .       1.0000000E+8          .          
+5  .s0        -INF             .       1.0000000E+8          .          
+5  .s1        -INF             .       1.0000000E+8          .          
+6  .s0        -INF             .       1.0000000E+8          .          
+6  .s1        -INF             .       1.0000000E+8          .          
+7  .s0        -INF             .       1.0000000E+8          .          
+7  .s1        -INF             .       1.0000000E+8          .          
+8  .s0        -INF             .       1.0000000E+8          .          
+8  .s1        -INF             .       1.0000000E+8          .          
+9  .s0        -INF             .       1.0000000E+8          .          
+9  .s1        -INF             .       1.0000000E+8          .          
+10 .s0        -INF             .       1.0000000E+8          .          
+10 .s1        -INF             .       1.0000000E+8          .          
+11 .s0        -INF             .       1.0000000E+8          .          
+11 .s1        -INF             .       1.0000000E+8          .          
+12 .s0        -INF             .       1.0000000E+8          .          
+12 .s1        -INF             .       1.0000000E+8          .          
+13 .s0        -INF             .       1.0000000E+8          .          
+13 .s1        -INF             .       1.0000000E+8          .          
+14 .s0        -INF             .       1.0000000E+8          .          
+14 .s1        -INF             .       1.0000000E+8          .          
+15 .s0        -INF             .       1.0000000E+8          .          
+15 .s1        -INF             .       1.0000000E+8          .          
+16 .s0        -INF             .       1.0000000E+8          .          
+16 .s1        -INF             .       1.0000000E+8          .          
+17 .s0        -INF             .       1.0000000E+8          .          
+17 .s1        -INF             .       1.0000000E+8          .          
+18 .s0        -INF             .       1.0000000E+8          .          
+18 .s1        -INF             .       1.0000000E+8          .          
+19 .s0        -INF             .       1.0000000E+8          .          
+19 .s1        -INF             .       1.0000000E+8          .          
+20 .s0        -INF             .       1.0000000E+8          .          
+20 .s1        -INF             .       1.0000000E+8          .          
+21 .s0        -INF             .       1.0000000E+8          .          
+21 .s1        -INF             .       1.0000000E+8          .          
+22 .s0        -INF             .       1.0000000E+8          .          
+22 .s1        -INF             .       1.0000000E+8          .          
+23 .s0        -INF             .       1.0000000E+8          .          
+23 .s1        -INF             .       1.0000000E+8          .          
+24 .s0        -INF             .       1.0000000E+8          .          
+24 .s1        -INF             .       1.0000000E+8          .          
+25 .s0        -INF             .       1.0000000E+8          .          
+GAMS 24.3.1  r47218 Released Jul 31, 2014 DEX-DEG x86 64bit/MacOS X                                                                                                                                                                   08/20/14 18:35:16 Page 36
+G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
+Solution Report     SOLVE stoch_wind_exp Using MIQCP From line 164
+
+
+     EQU lin_lda2_2  
+
+              LOWER          LEVEL          UPPER         MARGINAL
+
+25 .s1        -INF             .       1.0000000E+8          .          
+26 .s0        -INF             .       1.0000000E+8          .          
+26 .s1        -INF             .       1.0000000E+8          .          
+27 .s0        -INF             .       1.0000000E+8          .          
+27 .s1        -INF             .       1.0000000E+8          .          
+28 .s0        -INF             .       1.0000000E+8          .          
+28 .s1        -INF             .       1.0000000E+8          .          
+29 .s0        -INF             .       1.0000000E+8          .          
+29 .s1        -INF             .       1.0000000E+8          .          
+30 .s0        -INF             .       1.0000000E+8          .          
+30 .s1        -INF             .       1.0000000E+8          .          
+31 .s0        -INF             .       1.0000000E+8          .          
+31 .s1        -INF             .       1.0000000E+8          .          
+32 .s0        -INF             .       1.0000000E+8          .          
+32 .s1        -INF             .       1.0000000E+8          .          
+33 .s0        -INF             .       1.0000000E+8          .          
+33 .s1        -INF             .       1.0000000E+8          .          
+34 .s0        -INF             .       1.0000000E+8          .          
+34 .s1        -INF             .       1.0000000E+8          .          
+35 .s0        -INF             .       1.0000000E+8          .          
+35 .s1        -INF             .       1.0000000E+8          .          
+36 .s0        -INF             .       1.0000000E+8          .          
+36 .s1        -INF             .       1.0000000E+8          .          
+37 .s0        -INF             .       1.0000000E+8          .          
+37 .s1        -INF             .       1.0000000E+8          .          
+38 .s0        -INF             .       1.0000000E+8          .          
+38 .s1        -INF             .       1.0000000E+8          .          
+39 .s0        -INF             .       1.0000000E+8          .          
+39 .s1        -INF             .       1.0000000E+8          .          
+40 .s0        -INF             .       1.0000000E+8          .          
+40 .s1        -INF             .       1.0000000E+8          .          
+41 .s0        -INF             .       1.0000000E+8          .          
+41 .s1        -INF             .       1.0000000E+8          .          
+42 .s0        -INF             .       1.0000000E+8          .          
+42 .s1        -INF             .       1.0000000E+8          .          
+43 .s0        -INF             .       1.0000000E+8          .          
+43 .s1        -INF             .       1.0000000E+8          .          
+44 .s0        -INF             .       1.0000000E+8          .          
+44 .s1        -INF             .       1.0000000E+8          .          
+45 .s0        -INF             .       1.0000000E+8          .          
+45 .s1        -INF             .       1.0000000E+8          .          
+46 .s0        -INF             .       1.0000000E+8          .          
+46 .s1        -INF             .       1.0000000E+8          .          
+47 .s0        -INF             .       1.0000000E+8          .          
+47 .s1        -INF             .       1.0000000E+8          .          
+48 .s0        -INF             .       1.0000000E+8          .          
+48 .s1        -INF             .       1.0000000E+8          .          
+49 .s0        -INF             .       1.0000000E+8          .          
+49 .s1        -INF             .       1.0000000E+8          .          
+GAMS 24.3.1  r47218 Released Jul 31, 2014 DEX-DEG x86 64bit/MacOS X                                                                                                                                                                   08/20/14 18:35:16 Page 37
+G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
+Solution Report     SOLVE stoch_wind_exp Using MIQCP From line 164
+
+
+     EQU lin_lda2_2  
+
+              LOWER          LEVEL          UPPER         MARGINAL
+
+50 .s0        -INF      1.0000000E+8   1.0000000E+8          .          
+50 .s1        -INF      1.0000000E+8   1.0000000E+8          .          
+51 .s0        -INF             .       1.0000000E+8          .          
+51 .s1        -INF             .       1.0000000E+8          .          
+52 .s0        -INF             .       1.0000000E+8          .          
+52 .s1        -INF             .       1.0000000E+8          .          
+53 .s0        -INF             .       1.0000000E+8          .          
+53 .s1        -INF             .       1.0000000E+8          .          
+54 .s0        -INF             .       1.0000000E+8          .          
+54 .s1        -INF             .       1.0000000E+8          .          
+55 .s0        -INF             .       1.0000000E+8          .          
+55 .s1        -INF             .       1.0000000E+8          .          
+56 .s0        -INF             .       1.0000000E+8          .          
+56 .s1        -INF             .       1.0000000E+8          .          
+57 .s0        -INF             .       1.0000000E+8          .          
+57 .s1        -INF             .       1.0000000E+8          .          
+58 .s0        -INF             .       1.0000000E+8          .          
+58 .s1        -INF             .       1.0000000E+8          .          
+59 .s0        -INF             .       1.0000000E+8          .          
+59 .s1        -INF             .       1.0000000E+8          .          
+60 .s0        -INF             .       1.0000000E+8          .          
+60 .s1        -INF             .       1.0000000E+8          .          
+61 .s0        -INF             .       1.0000000E+8          .          
+61 .s1        -INF             .       1.0000000E+8          .          
+62 .s0        -INF             .       1.0000000E+8          .          
+62 .s1        -INF             .       1.0000000E+8          .          
+63 .s0        -INF             .       1.0000000E+8          .          
+63 .s1        -INF             .       1.0000000E+8          .          
+64 .s0        -INF             .       1.0000000E+8          .          
+64 .s1        -INF             .       1.0000000E+8          .          
+65 .s0        -INF      1.0000000E+8   1.0000000E+8          .          
+65 .s1        -INF      1.0000000E+8   1.0000000E+8          .          
+66 .s0        -INF      1.0000000E+8   1.0000000E+8          .          
+66 .s1        -INF      1.0000000E+8   1.0000000E+8          .          
+67 .s0        -INF      1.0000000E+8   1.0000000E+8          .          
+67 .s1        -INF      1.0000000E+8   1.0000000E+8          .          
+68 .s0        -INF      1.0000000E+8   1.0000000E+8          .          
+68 .s1        -INF      1.0000000E+8   1.0000000E+8          .          
+69 .s0        -INF             .       1.0000000E+8          .          
+69 .s1        -INF             .       1.0000000E+8          .          
+70 .s0        -INF             .       1.0000000E+8          .          
+70 .s1        -INF             .       1.0000000E+8          .          
+71 .s0        -INF             .       1.0000000E+8          .          
+71 .s1        -INF             .       1.0000000E+8          .          
+72 .s0        -INF             .       1.0000000E+8          .          
+72 .s1        -INF             .       1.0000000E+8          .          
+73 .s0        -INF             .       1.0000000E+8          .          
+73 .s1        -INF             .       1.0000000E+8          .          
+74 .s0        -INF             .       1.0000000E+8          .          
+GAMS 24.3.1  r47218 Released Jul 31, 2014 DEX-DEG x86 64bit/MacOS X                                                                                                                                                                   08/20/14 18:35:16 Page 38
+G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
+Solution Report     SOLVE stoch_wind_exp Using MIQCP From line 164
+
+
+     EQU lin_lda2_2  
+
+              LOWER          LEVEL          UPPER         MARGINAL
+
+74 .s1        -INF             .       1.0000000E+8          .          
+75 .s0        -INF             .       1.0000000E+8          .          
+75 .s1        -INF             .       1.0000000E+8          .          
+76 .s0        -INF             .       1.0000000E+8          .          
+76 .s1        -INF             .       1.0000000E+8          .          
+77 .s0        -INF             .       1.0000000E+8          .          
+77 .s1        -INF             .       1.0000000E+8          .          
+78 .s0        -INF             .       1.0000000E+8          .          
+78 .s1        -INF             .       1.0000000E+8          .          
+79 .s0        -INF             .       1.0000000E+8          .          
+79 .s1        -INF             .       1.0000000E+8          .          
+80 .s0        -INF             .       1.0000000E+8          .          
+80 .s1        -INF             .       1.0000000E+8          .          
+81 .s0        -INF             .       1.0000000E+8          .          
+81 .s1        -INF             .       1.0000000E+8          .          
+82 .s0        -INF             .       1.0000000E+8          .          
+82 .s1        -INF             .       1.0000000E+8          .          
+83 .s0        -INF             .       1.0000000E+8          .          
+83 .s1        -INF             .       1.0000000E+8          .          
+84 .s0        -INF             .       1.0000000E+8          .          
+84 .s1        -INF             .       1.0000000E+8          .          
+85 .s0        -INF             .       1.0000000E+8          .          
+85 .s1        -INF             .       1.0000000E+8          .          
+86 .s0        -INF             .       1.0000000E+8          .          
+86 .s1        -INF             .       1.0000000E+8          .          
+87 .s0        -INF             .       1.0000000E+8          .          
+87 .s1        -INF             .       1.0000000E+8          .          
+88 .s0        -INF             .       1.0000000E+8          .          
+88 .s1        -INF             .       1.0000000E+8          .          
+89 .s0        -INF             .       1.0000000E+8          .          
+89 .s1        -INF             .       1.0000000E+8          .          
+90 .s0        -INF             .       1.0000000E+8          .          
+90 .s1        -INF             .       1.0000000E+8          .          
+91 .s0        -INF             .       1.0000000E+8          .          
+91 .s1        -INF             .       1.0000000E+8          .          
+92 .s0        -INF             .       1.0000000E+8          .          
+92 .s1        -INF             .       1.0000000E+8          .          
+93 .s0        -INF             .       1.0000000E+8          .          
+93 .s1        -INF             .       1.0000000E+8          .          
+94 .s0        -INF             .       1.0000000E+8          .          
+94 .s1        -INF             .       1.0000000E+8          .          
+95 .s0        -INF             .       1.0000000E+8          .          
+95 .s1        -INF             .       1.0000000E+8          .          
+96 .s0        -INF             .       1.0000000E+8          .          
+96 .s1        -INF             .       1.0000000E+8          .          
+97 .s0        -INF             .       1.0000000E+8          .          
+97 .s1        -INF             .       1.0000000E+8          .          
+98 .s0        -INF             .       1.0000000E+8          .          
+98 .s1        -INF             .       1.0000000E+8          .          
+GAMS 24.3.1  r47218 Released Jul 31, 2014 DEX-DEG x86 64bit/MacOS X                                                                                                                                                                   08/20/14 18:35:16 Page 39
+G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
+Solution Report     SOLVE stoch_wind_exp Using MIQCP From line 164
+
+
+     EQU lin_lda2_2  
+
+              LOWER          LEVEL          UPPER         MARGINAL
+
+99 .s0        -INF             .       1.0000000E+8          .          
+99 .s1        -INF             .       1.0000000E+8          .          
+100.s0        -INF             .       1.0000000E+8          .          
+100.s1        -INF             .       1.0000000E+8          .          
+
+---- EQU set_k  
+
+              LOWER          LEVEL          UPPER         MARGINAL
+
+1  .s0          .              .              .              .          
+1  .s1          .              .              .              .          
+2  .s0          .              .              .              .          
+2  .s1          .              .              .              .          
+3  .s0          .              .              .              .          
+3  .s1          .              .              .              .          
+4  .s0          .              .              .              .          
+4  .s1          .              .              .              .          
+5  .s0          .              .              .              .          
+5  .s1          .              .              .              .          
+6  .s0          .              .              .              .          
+6  .s1          .              .              .              .          
+7  .s0          .              .              .              .          
+7  .s1          .              .              .              .          
+8  .s0          .              .              .              .          
+8  .s1          .              .              .              .          
+9  .s0          .              .              .              .          
+9  .s1          .              .              .              .          
+10 .s0          .              .              .              .          
+10 .s1          .              .              .              .          
+11 .s0          .              .              .              .          
+11 .s1          .              .              .              .          
+12 .s0          .              .              .              .          
+12 .s1          .              .              .              .          
+13 .s0          .              .              .              .          
+13 .s1          .              .              .              .          
+14 .s0          .              .              .              .          
+14 .s1          .              .              .              .          
+15 .s0          .              .              .              .          
+15 .s1          .              .              .              .          
+16 .s0          .              .              .              .          
+16 .s1          .              .              .              .          
+17 .s0          .              .              .              .          
+17 .s1          .              .              .              .          
+18 .s0          .              .              .              .          
+18 .s1          .              .              .              .          
+19 .s0          .              .              .              .          
+19 .s1          .              .              .              .          
+20 .s0          .              .              .              .          
+20 .s1          .              .              .              .          
+GAMS 24.3.1  r47218 Released Jul 31, 2014 DEX-DEG x86 64bit/MacOS X                                                                                                                                                                   08/20/14 18:35:16 Page 40
+G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
+Solution Report     SOLVE stoch_wind_exp Using MIQCP From line 164
+
+
+     EQU set_k  
+
+              LOWER          LEVEL          UPPER         MARGINAL
+
+21 .s0          .              .              .              .          
+21 .s1          .              .              .              .          
+22 .s0          .              .              .              .          
+22 .s1          .              .              .              .          
+23 .s0          .              .              .              .          
+23 .s1          .              .              .              .          
+24 .s0          .              .              .              .          
+24 .s1          .              .              .              .          
+25 .s0          .              .              .              .          
+25 .s1          .              .              .              .          
+26 .s0          .              .              .              .          
+26 .s1          .              .              .              .          
+27 .s0          .              .              .              .          
+27 .s1          .              .              .              .          
+28 .s0          .              .              .              .          
+28 .s1          .              .              .              .          
+29 .s0          .              .              .              .          
+29 .s1          .              .              .              .          
+30 .s0          .              .              .              .          
+30 .s1          .              .              .              .          
+31 .s0          .              .              .              .          
+31 .s1          .              .              .              .          
+32 .s0          .              .              .              .          
+32 .s1          .              .              .              .          
+33 .s0          .              .              .              .          
+33 .s1          .              .              .              .          
+34 .s0          .              .              .              .          
+34 .s1          .              .              .              .          
+35 .s0          .              .              .              .          
+35 .s1          .              .              .              .          
+36 .s0          .              .              .              .          
+36 .s1          .              .              .              .          
+37 .s0          .              .              .              .          
+37 .s1          .              .              .              .          
+38 .s0          .              .              .              .          
+38 .s1          .              .              .              .          
+39 .s0          .              .              .              .          
+39 .s1          .              .              .              .          
+40 .s0          .              .              .              .          
+40 .s1          .              .              .              .          
+41 .s0          .              .              .              .          
+41 .s1          .              .              .              .          
+42 .s0          .              .              .              .          
+42 .s1          .              .              .              .          
+43 .s0          .              .              .              .          
+43 .s1          .              .              .              .          
+44 .s0          .              .              .              .          
+44 .s1          .              .              .              .          
+45 .s0          .              .              .              .          
+GAMS 24.3.1  r47218 Released Jul 31, 2014 DEX-DEG x86 64bit/MacOS X                                                                                                                                                                   08/20/14 18:35:16 Page 41
+G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
+Solution Report     SOLVE stoch_wind_exp Using MIQCP From line 164
+
+
+     EQU set_k  
+
+              LOWER          LEVEL          UPPER         MARGINAL
+
+45 .s1          .              .              .              .          
+46 .s0          .              .              .              .          
+46 .s1          .              .              .              .          
+47 .s0          .              .              .              .          
+47 .s1          .              .              .              .          
+48 .s0          .              .              .              .          
+48 .s1          .              .              .              .          
+49 .s0          .              .              .              .          
+49 .s1          .              .              .              .          
+50 .s0          .              .              .           -75.0000      
+50 .s1          .              .              .           -50.0000      
+51 .s0          .              .              .              .          
+51 .s1          .              .              .              .          
+52 .s0          .              .              .              .          
+52 .s1          .              .              .              .          
+53 .s0          .              .              .              .          
+53 .s1          .              .              .              .          
+54 .s0          .              .              .              .          
+54 .s1          .              .              .              .          
+55 .s0          .              .              .              .          
+55 .s1          .              .              .              .          
+56 .s0          .              .              .              .          
+56 .s1          .              .              .              .          
+57 .s0          .              .              .              .          
+57 .s1          .              .              .              .          
+58 .s0          .              .              .              .          
+58 .s1          .              .              .              .          
+59 .s0          .              .              .              .          
+59 .s1          .              .              .              .          
+60 .s0          .              .              .              .          
+60 .s1          .              .              .              .          
+61 .s0          .              .              .              .          
+61 .s1          .              .              .              .          
+62 .s0          .              .              .              .          
+62 .s1          .              .              .              .          
+63 .s0          .              .              .              .          
+63 .s1          .              .              .              .          
+64 .s0          .              .              .              .          
+64 .s1          .              .              .              .          
+65 .s0          .              .              .           -75.0000      
+65 .s1          .              .              .           -50.0000      
+66 .s0          .              .              .           -75.0000      
+66 .s1          .              .              .           -50.0000      
+67 .s0          .              .              .           -75.0000      
+67 .s1          .              .              .           -50.0000      
+68 .s0          .              .              .           -75.0000      
+68 .s1          .              .              .           -50.0000      
+69 .s0          .              .              .              .          
+69 .s1          .              .              .              .          
+GAMS 24.3.1  r47218 Released Jul 31, 2014 DEX-DEG x86 64bit/MacOS X                                                                                                                                                                   08/20/14 18:35:16 Page 42
+G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
+Solution Report     SOLVE stoch_wind_exp Using MIQCP From line 164
+
+
+     EQU set_k  
+
+              LOWER          LEVEL          UPPER         MARGINAL
+
+70 .s0          .              .              .              .          
+70 .s1          .              .              .              .          
+71 .s0          .              .              .              .          
+71 .s1          .              .              .              .          
+72 .s0          .              .              .              .          
+72 .s1          .              .              .              .          
+73 .s0          .              .              .              .          
+73 .s1          .              .              .              .          
+74 .s0          .              .              .              .          
+74 .s1          .              .              .              .          
+75 .s0          .              .              .              .          
+75 .s1          .              .              .              .          
+76 .s0          .              .              .              .          
+76 .s1          .              .              .              .          
+77 .s0          .              .              .              .          
+77 .s1          .              .              .              .          
+78 .s0          .              .              .              .          
+78 .s1          .              .              .              .          
+79 .s0          .              .              .              .          
+79 .s1          .              .              .              .          
+80 .s0          .              .              .              .          
+80 .s1          .              .              .              .          
+81 .s0          .              .              .              .          
+81 .s1          .              .              .              .          
+82 .s0          .              .              .              .          
+82 .s1          .              .              .              .          
+83 .s0          .              .              .              .          
+83 .s1          .              .              .              .          
+84 .s0          .              .              .              .          
+84 .s1          .              .              .              .          
+85 .s0          .              .              .              .          
+85 .s1          .              .              .              .          
+86 .s0          .              .              .              .          
+86 .s1          .              .              .              .          
+87 .s0          .              .              .              .          
+87 .s1          .              .              .              .          
+88 .s0          .              .              .              .          
+88 .s1          .              .              .              .          
+89 .s0          .              .              .              .          
+89 .s1          .              .              .              .          
+90 .s0          .              .              .              .          
+90 .s1          .              .              .              .          
+91 .s0          .              .              .              .          
+91 .s1          .              .              .              .          
+92 .s0          .              .              .              .          
+92 .s1          .              .              .              .          
+93 .s0          .              .              .              .          
+93 .s1          .              .              .              .          
+94 .s0          .              .              .              .          
+GAMS 24.3.1  r47218 Released Jul 31, 2014 DEX-DEG x86 64bit/MacOS X                                                                                                                                                                   08/20/14 18:35:16 Page 43
+G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
+Solution Report     SOLVE stoch_wind_exp Using MIQCP From line 164
+
+
+     EQU set_k  
+
+              LOWER          LEVEL          UPPER         MARGINAL
+
+94 .s1          .              .              .              .          
+95 .s0          .              .              .              .          
+95 .s1          .              .              .              .          
+96 .s0          .              .              .              .          
+96 .s1          .              .              .              .          
+97 .s0          .              .              .              .          
+97 .s1          .              .              .              .          
+98 .s0          .              .              .              .          
+98 .s1          .              .              .              .          
+99 .s0          .              .              .              .          
+99 .s1          .              .              .              .          
+100.s0          .              .              .              .          
+100.s1          .              .              .              .          
+
+                           LOWER          LEVEL          UPPER         MARGINAL
+
+---- EQU coulon            -INF             .           150.0000          .          
+
+                           LOWER          LEVEL          UPPER         MARGINAL
+
+---- VAR r_costs           -INF         2500.0000        +INF             .          
+
+  r_costs  objective function value
+
+---- VAR q_r  renewable generation
+
+          LOWER          LEVEL          UPPER         MARGINAL
+
+s0          .           500.0000        +INF             .          
+s1          .           500.0000        +INF             .          
+
+---- VAR q_n  non-renewable generation
+
+          LOWER          LEVEL          UPPER         MARGINAL
+
+s0          .              .            +INF            EPS         
+s1          .              .            +INF            EPS         
+
+                           LOWER          LEVEL          UPPER         MARGINAL
+
+---- VAR r_inst              .           500.0000        +INF             .          
+
+  r_inst  renewable capacity installed
+GAMS 24.3.1  r47218 Released Jul 31, 2014 DEX-DEG x86 64bit/MacOS X                                                                                                                                                                   08/20/14 18:35:16 Page 44
+G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
+Solution Report     SOLVE stoch_wind_exp Using MIQCP From line 164
+
+
+---- VAR lda  demand dual
+
+          LOWER          LEVEL          UPPER         MARGINAL
+
+s0          .              .            +INF            EPS         
+s1          .              .            +INF            EPS         
+
+---- VAR v  binary
+
+           LOWER          LEVEL          UPPER         MARGINAL
+
+1            .              .             1.0000   -1.25000E+10      
+2            .              .             1.0000   -1.25000E+10      
+3            .              .             1.0000   -1.25000E+10      
+4            .              .             1.0000   -1.25000E+10      
+5            .              .             1.0000   -1.25000E+10      
+6            .              .             1.0000   -1.25000E+10      
+7            .              .             1.0000   -1.25000E+10      
+8            .              .             1.0000   -1.25000E+10      
+9            .              .             1.0000   -1.25000E+10      
+10           .              .             1.0000   -1.25000E+10      
+11           .              .             1.0000   -1.25000E+10      
+12           .              .             1.0000   -1.25000E+10      
+13           .              .             1.0000   -1.25000E+10      
+14           .              .             1.0000   -1.25000E+10      
+15           .              .             1.0000   -1.25000E+10      
+16           .              .             1.0000   -1.25000E+10      
+17           .              .             1.0000   -1.25000E+10      
+18           .              .             1.0000   -1.25000E+10      
+19           .              .             1.0000   -1.25000E+10      
+20           .              .             1.0000   -1.25000E+10      
+21           .              .             1.0000   -1.25000E+10      
+22           .              .             1.0000   -1.25000E+10      
+23           .              .             1.0000   -1.25000E+10      
+24           .              .             1.0000   -1.25000E+10      
+25           .              .             1.0000   -1.25000E+10      
+26           .              .             1.0000   -1.25000E+10      
+27           .              .             1.0000   -1.25000E+10      
+28           .              .             1.0000   -1.25000E+10      
+29           .              .             1.0000   -1.25000E+10      
+30           .              .             1.0000   -1.25000E+10      
+31           .              .             1.0000   -1.25000E+10      
+32           .              .             1.0000   -1.25000E+10      
+33           .              .             1.0000   -1.25000E+10      
+34           .              .             1.0000   -1.25000E+10      
+35           .              .             1.0000   -1.25000E+10      
+36           .              .             1.0000   -1.25000E+10      
+37           .              .             1.0000   -1.25000E+10      
+38           .              .             1.0000   -1.25000E+10      
+39           .              .             1.0000   -1.25000E+10      
+40           .              .             1.0000   -1.25000E+10      
+41           .              .             1.0000   -1.25000E+10      
+42           .              .             1.0000   -1.25000E+10      
+GAMS 24.3.1  r47218 Released Jul 31, 2014 DEX-DEG x86 64bit/MacOS X                                                                                                                                                                   08/20/14 18:35:16 Page 45
+G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
+Solution Report     SOLVE stoch_wind_exp Using MIQCP From line 164
+
+
+     VAR v  binary
+
+           LOWER          LEVEL          UPPER         MARGINAL
+
+43           .              .             1.0000   -1.25000E+10      
+44           .              .             1.0000   -1.25000E+10      
+45           .              .             1.0000   -1.25000E+10      
+46           .              .             1.0000   -1.25000E+10      
+47           .              .             1.0000   -1.25000E+10      
+48           .              .             1.0000   -1.25000E+10      
+49           .              .             1.0000   -1.25000E+10      
+50           .             1.0000         1.0000       500.0000      
+51           .              .             1.0000   -1.25000E+10      
+52           .              .             1.0000   -1.25000E+10      
+53           .              .             1.0000   -1.25000E+10      
+54           .              .             1.0000   -1.25000E+10      
+55           .              .             1.0000   -1.25000E+10      
+56           .              .             1.0000   -1.25000E+10      
+57           .              .             1.0000   -1.25000E+10      
+58           .              .             1.0000   -1.25000E+10      
+59           .              .             1.0000   -1.25000E+10      
+60           .              .             1.0000   -1.25000E+10      
+61           .              .             1.0000   -1.25000E+10      
+62           .              .             1.0000   -1.25000E+10      
+63           .              .             1.0000   -1.25000E+10      
+64           .              .             1.0000   -1.25000E+10      
+65           .             1.0000         1.0000       500.0000      
+66           .             1.0000         1.0000       500.0000      
+67           .             1.0000         1.0000       500.0000      
+68           .             1.0000         1.0000       500.0000      
+69           .              .             1.0000   -1.25000E+10      
+70           .              .             1.0000   -1.25000E+10      
+71           .              .             1.0000   -1.25000E+10      
+72           .              .             1.0000   -1.25000E+10      
+73           .              .             1.0000   -1.25000E+10      
+74           .              .             1.0000   -1.25000E+10      
+75           .              .             1.0000   -1.25000E+10      
+76           .              .             1.0000   -1.25000E+10      
+77           .              .             1.0000   -1.25000E+10      
+78           .              .             1.0000   -1.25000E+10      
+79           .              .             1.0000   -1.25000E+10      
+80           .              .             1.0000   -1.25000E+10      
+81           .              .             1.0000   -1.25000E+10      
+82           .              .             1.0000   -1.25000E+10      
+83           .              .             1.0000   -1.25000E+10      
+84           .              .             1.0000   -1.25000E+10      
+85           .              .             1.0000   -1.25000E+10      
+86           .              .             1.0000   -1.25000E+10      
+87           .              .             1.0000   -1.25000E+10      
+88           .              .             1.0000   -1.25000E+10      
+89           .              .             1.0000   -1.25000E+10      
+90           .              .             1.0000   -1.25000E+10      
+91           .              .             1.0000   -1.25000E+10      
+GAMS 24.3.1  r47218 Released Jul 31, 2014 DEX-DEG x86 64bit/MacOS X                                                                                                                                                                   08/20/14 18:35:16 Page 46
+G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
+Solution Report     SOLVE stoch_wind_exp Using MIQCP From line 164
+
+
+     VAR v  binary
+
+           LOWER          LEVEL          UPPER         MARGINAL
+
+92           .              .             1.0000   -1.25000E+10      
+93           .              .             1.0000   -1.25000E+10      
+94           .              .             1.0000   -1.25000E+10      
+95           .              .             1.0000   -1.25000E+10      
+96           .              .             1.0000   -1.25000E+10      
+97           .              .             1.0000   -1.25000E+10      
+98           .              .             1.0000   -1.25000E+10      
+99           .              .             1.0000   -1.25000E+10      
+100          .              .             1.0000   -1.25000E+10      
+
+                           LOWER          LEVEL          UPPER         MARGINAL
+
+---- VAR p_rec               .              .            +INF            EPS         
+
+  p_rec  price of RECs
+
+---- VAR gam_r_lo  
+
+          LOWER          LEVEL          UPPER         MARGINAL
+
+s0          .              .            +INF            EPS         
+s1          .              .            +INF            EPS         
+
+---- VAR gam_r_hi  
+
+          LOWER          LEVEL          UPPER         MARGINAL
+
+s0          .              .            +INF             .          
+s1          .              .            +INF             .          
+
+---- VAR gam_n_lo  
+
+          LOWER          LEVEL          UPPER         MARGINAL
+
+s0          .            20.0000        +INF             .          
+s1          .            20.0000        +INF             .          
+
+---- VAR gam_n_hi  
+
+          LOWER          LEVEL          UPPER         MARGINAL
+
+s0          .              .            +INF            EPS         
+s1          .              .            +INF            EPS         
+GAMS 24.3.1  r47218 Released Jul 31, 2014 DEX-DEG x86 64bit/MacOS X                                                                                                                                                                   08/20/14 18:35:16 Page 47
+G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
+Solution Report     SOLVE stoch_wind_exp Using MIQCP From line 164
+
+
+---- VAR k  
+
+              LOWER          LEVEL          UPPER         MARGINAL
+
+1  .s0        -INF             .            +INF             .          
+1  .s1        -INF             .            +INF             .          
+2  .s0        -INF             .            +INF             .          
+2  .s1        -INF             .            +INF             .          
+3  .s0        -INF             .            +INF             .          
+3  .s1        -INF             .            +INF             .          
+4  .s0        -INF             .            +INF             .          
+4  .s1        -INF             .            +INF             .          
+5  .s0        -INF             .            +INF             .          
+5  .s1        -INF             .            +INF             .          
+6  .s0        -INF             .            +INF             .          
+6  .s1        -INF             .            +INF             .          
+7  .s0        -INF             .            +INF             .          
+7  .s1        -INF             .            +INF             .          
+8  .s0        -INF             .            +INF             .          
+8  .s1        -INF             .            +INF             .          
+9  .s0        -INF             .            +INF             .          
+9  .s1        -INF             .            +INF             .          
+10 .s0        -INF             .            +INF             .          
+10 .s1        -INF             .            +INF             .          
+11 .s0        -INF             .            +INF             .          
+11 .s1        -INF             .            +INF             .          
+12 .s0        -INF             .            +INF             .          
+12 .s1        -INF             .            +INF             .          
+13 .s0        -INF             .            +INF             .          
+13 .s1        -INF             .            +INF             .          
+14 .s0        -INF             .            +INF             .          
+14 .s1        -INF             .            +INF             .          
+15 .s0        -INF             .            +INF             .          
+15 .s1        -INF             .            +INF             .          
+16 .s0        -INF             .            +INF             .          
+16 .s1        -INF             .            +INF             .          
+17 .s0        -INF             .            +INF             .          
+17 .s1        -INF             .            +INF             .          
+18 .s0        -INF             .            +INF             .          
+18 .s1        -INF             .            +INF             .          
+19 .s0        -INF             .            +INF             .          
+19 .s1        -INF             .            +INF             .          
+20 .s0        -INF             .            +INF             .          
+20 .s1        -INF             .            +INF             .          
+21 .s0        -INF             .            +INF             .          
+21 .s1        -INF             .            +INF             .          
+22 .s0        -INF             .            +INF             .          
+22 .s1        -INF             .            +INF             .          
+23 .s0        -INF             .            +INF             .          
+23 .s1        -INF             .            +INF             .          
+24 .s0        -INF             .            +INF             .          
+24 .s1        -INF             .            +INF             .          
+25 .s0        -INF             .            +INF             .          
+GAMS 24.3.1  r47218 Released Jul 31, 2014 DEX-DEG x86 64bit/MacOS X                                                                                                                                                                   08/20/14 18:35:16 Page 48
+G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
+Solution Report     SOLVE stoch_wind_exp Using MIQCP From line 164
+
+
+     VAR k  
+
+              LOWER          LEVEL          UPPER         MARGINAL
+
+25 .s1        -INF             .            +INF             .          
+26 .s0        -INF             .            +INF             .          
+26 .s1        -INF             .            +INF             .          
+27 .s0        -INF             .            +INF             .          
+27 .s1        -INF             .            +INF             .          
+28 .s0        -INF             .            +INF             .          
+28 .s1        -INF             .            +INF             .          
+29 .s0        -INF             .            +INF             .          
+29 .s1        -INF             .            +INF             .          
+30 .s0        -INF             .            +INF             .          
+30 .s1        -INF             .            +INF             .          
+31 .s0        -INF             .            +INF             .          
+31 .s1        -INF             .            +INF             .          
+32 .s0        -INF             .            +INF             .          
+32 .s1        -INF             .            +INF             .          
+33 .s0        -INF             .            +INF             .          
+33 .s1        -INF             .            +INF             .          
+34 .s0        -INF             .            +INF             .          
+34 .s1        -INF             .            +INF             .          
+35 .s0        -INF             .            +INF             .          
+35 .s1        -INF             .            +INF             .          
+36 .s0        -INF             .            +INF             .          
+36 .s1        -INF             .            +INF             .          
+37 .s0        -INF             .            +INF             .          
+37 .s1        -INF             .            +INF             .          
+38 .s0        -INF             .            +INF             .          
+38 .s1        -INF             .            +INF             .          
+39 .s0        -INF             .            +INF             .          
+39 .s1        -INF             .            +INF             .          
+40 .s0        -INF             .            +INF             .          
+40 .s1        -INF             .            +INF             .          
+41 .s0        -INF             .            +INF             .          
+41 .s1        -INF             .            +INF             .          
+42 .s0        -INF             .            +INF             .          
+42 .s1        -INF             .            +INF             .          
+43 .s0        -INF             .            +INF             .          
+43 .s1        -INF             .            +INF             .          
+44 .s0        -INF             .            +INF             .          
+44 .s1        -INF             .            +INF             .          
+45 .s0        -INF             .            +INF             .          
+45 .s1        -INF             .            +INF             .          
+46 .s0        -INF             .            +INF             .          
+46 .s1        -INF             .            +INF             .          
+47 .s0        -INF             .            +INF             .          
+47 .s1        -INF             .            +INF             .          
+48 .s0        -INF             .            +INF             .          
+48 .s1        -INF             .            +INF             .          
+49 .s0        -INF             .            +INF             .          
+49 .s1        -INF             .            +INF             .          
+GAMS 24.3.1  r47218 Released Jul 31, 2014 DEX-DEG x86 64bit/MacOS X                                                                                                                                                                   08/20/14 18:35:16 Page 49
+G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
+Solution Report     SOLVE stoch_wind_exp Using MIQCP From line 164
+
+
+     VAR k  
+
+              LOWER          LEVEL          UPPER         MARGINAL
+
+50 .s0        -INF             .            +INF             .          
+50 .s1        -INF             .            +INF             .          
+51 .s0        -INF             .            +INF             .          
+51 .s1        -INF             .            +INF             .          
+52 .s0        -INF             .            +INF             .          
+52 .s1        -INF             .            +INF             .          
+53 .s0        -INF             .            +INF             .          
+53 .s1        -INF             .            +INF             .          
+54 .s0        -INF             .            +INF             .          
+54 .s1        -INF             .            +INF             .          
+55 .s0        -INF             .            +INF             .          
+55 .s1        -INF             .            +INF             .          
+56 .s0        -INF             .            +INF             .          
+56 .s1        -INF             .            +INF             .          
+57 .s0        -INF             .            +INF             .          
+57 .s1        -INF             .            +INF             .          
+58 .s0        -INF             .            +INF             .          
+58 .s1        -INF             .            +INF             .          
+59 .s0        -INF             .            +INF             .          
+59 .s1        -INF             .            +INF             .          
+60 .s0        -INF             .            +INF             .          
+60 .s1        -INF             .            +INF             .          
+61 .s0        -INF             .            +INF             .          
+61 .s1        -INF             .            +INF             .          
+62 .s0        -INF             .            +INF             .          
+62 .s1        -INF             .            +INF             .          
+63 .s0        -INF             .            +INF             .          
+63 .s1        -INF             .            +INF             .          
+64 .s0        -INF             .            +INF             .          
+64 .s1        -INF             .            +INF             .          
+65 .s0        -INF             .            +INF             .          
+65 .s1        -INF             .            +INF             .          
+66 .s0        -INF             .            +INF             .          
+66 .s1        -INF             .            +INF             .          
+67 .s0        -INF             .            +INF             .          
+67 .s1        -INF             .            +INF             .          
+68 .s0        -INF             .            +INF             .          
+68 .s1        -INF             .            +INF             .          
+69 .s0        -INF             .            +INF             .          
+69 .s1        -INF             .            +INF             .          
+70 .s0        -INF             .            +INF             .          
+70 .s1        -INF             .            +INF             .          
+71 .s0        -INF             .            +INF             .          
+71 .s1        -INF             .            +INF             .          
+72 .s0        -INF             .            +INF             .          
+72 .s1        -INF             .            +INF             .          
+73 .s0        -INF             .            +INF             .          
+73 .s1        -INF             .            +INF             .          
+74 .s0        -INF             .            +INF             .          
+GAMS 24.3.1  r47218 Released Jul 31, 2014 DEX-DEG x86 64bit/MacOS X                                                                                                                                                                   08/20/14 18:35:16 Page 50
+G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
+Solution Report     SOLVE stoch_wind_exp Using MIQCP From line 164
+
+
+     VAR k  
+
+              LOWER          LEVEL          UPPER         MARGINAL
+
+74 .s1        -INF             .            +INF             .          
+75 .s0        -INF             .            +INF             .          
+75 .s1        -INF             .            +INF             .          
+76 .s0        -INF             .            +INF             .          
+76 .s1        -INF             .            +INF             .          
+77 .s0        -INF             .            +INF             .          
+77 .s1        -INF             .            +INF             .          
+78 .s0        -INF             .            +INF             .          
+78 .s1        -INF             .            +INF             .          
+79 .s0        -INF             .            +INF             .          
+79 .s1        -INF             .            +INF             .          
+80 .s0        -INF             .            +INF             .          
+80 .s1        -INF             .            +INF             .          
+81 .s0        -INF             .            +INF             .          
+81 .s1        -INF             .            +INF             .          
+82 .s0        -INF             .            +INF             .          
+82 .s1        -INF             .            +INF             .          
+83 .s0        -INF             .            +INF             .          
+83 .s1        -INF             .            +INF             .          
+84 .s0        -INF             .            +INF             .          
+84 .s1        -INF             .            +INF             .          
+85 .s0        -INF             .            +INF             .          
+85 .s1        -INF             .            +INF             .          
+86 .s0        -INF             .            +INF             .          
+86 .s1        -INF             .            +INF             .          
+87 .s0        -INF             .            +INF             .          
+87 .s1        -INF             .            +INF             .          
+88 .s0        -INF             .            +INF             .          
+88 .s1        -INF             .            +INF             .          
+89 .s0        -INF             .            +INF             .          
+89 .s1        -INF             .            +INF             .          
+90 .s0        -INF             .            +INF             .          
+90 .s1        -INF             .            +INF             .          
+91 .s0        -INF             .            +INF             .          
+91 .s1        -INF             .            +INF             .          
+92 .s0        -INF             .            +INF             .          
+92 .s1        -INF             .            +INF             .          
+93 .s0        -INF             .            +INF             .          
+93 .s1        -INF             .            +INF             .          
+94 .s0        -INF             .            +INF             .          
+94 .s1        -INF             .            +INF             .          
+95 .s0        -INF             .            +INF             .          
+95 .s1        -INF             .            +INF             .          
+96 .s0        -INF             .            +INF             .          
+96 .s1        -INF             .            +INF             .          
+97 .s0        -INF             .            +INF             .          
+97 .s1        -INF             .            +INF             .          
+98 .s0        -INF             .            +INF             .          
+98 .s1        -INF             .            +INF             .          
+GAMS 24.3.1  r47218 Released Jul 31, 2014 DEX-DEG x86 64bit/MacOS X                                                                                                                                                                   08/20/14 18:35:16 Page 51
+G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
+Solution Report     SOLVE stoch_wind_exp Using MIQCP From line 164
+
+
+     VAR k  
+
+              LOWER          LEVEL          UPPER         MARGINAL
+
+99 .s0        -INF             .            +INF             .          
+99 .s1        -INF             .            +INF             .          
+100.s0        -INF             .            +INF             .          
+100.s1        -INF             .            +INF             .          
+
+---- VAR k_hat  
+
+              LOWER          LEVEL          UPPER         MARGINAL
+
+1  .s0        -INF             .            +INF             .          
+1  .s1        -INF             .            +INF             .          
+2  .s0        -INF             .            +INF             .          
+2  .s1        -INF             .            +INF             .          
+3  .s0        -INF             .            +INF             .          
+3  .s1        -INF             .            +INF             .          
+4  .s0        -INF             .            +INF             .          
+4  .s1        -INF             .            +INF             .          
+5  .s0        -INF             .            +INF             .          
+5  .s1        -INF             .            +INF             .          
+6  .s0        -INF             .            +INF             .          
+6  .s1        -INF             .            +INF             .          
+7  .s0        -INF             .            +INF             .          
+7  .s1        -INF             .            +INF             .          
+8  .s0        -INF             .            +INF             .          
+8  .s1        -INF             .            +INF             .          
+9  .s0        -INF             .            +INF             .          
+9  .s1        -INF             .            +INF             .          
+10 .s0        -INF             .            +INF             .          
+10 .s1        -INF             .            +INF             .          
+11 .s0        -INF             .            +INF             .          
+11 .s1        -INF             .            +INF             .          
+12 .s0        -INF             .            +INF             .          
+12 .s1        -INF             .            +INF             .          
+13 .s0        -INF             .            +INF             .          
+13 .s1        -INF             .            +INF             .          
+14 .s0        -INF             .            +INF             .          
+14 .s1        -INF             .            +INF             .          
+15 .s0        -INF             .            +INF             .          
+15 .s1        -INF             .            +INF             .          
+16 .s0        -INF             .            +INF             .          
+16 .s1        -INF             .            +INF             .          
+17 .s0        -INF             .            +INF             .          
+17 .s1        -INF             .            +INF             .          
+18 .s0        -INF             .            +INF             .          
+18 .s1        -INF             .            +INF             .          
+19 .s0        -INF             .            +INF             .          
+19 .s1        -INF             .            +INF             .          
+20 .s0        -INF             .            +INF             .          
+20 .s1        -INF             .            +INF             .          
+GAMS 24.3.1  r47218 Released Jul 31, 2014 DEX-DEG x86 64bit/MacOS X                                                                                                                                                                   08/20/14 18:35:16 Page 52
+G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
+Solution Report     SOLVE stoch_wind_exp Using MIQCP From line 164
+
+
+     VAR k_hat  
+
+              LOWER          LEVEL          UPPER         MARGINAL
+
+21 .s0        -INF             .            +INF             .          
+21 .s1        -INF             .            +INF             .          
+22 .s0        -INF             .            +INF             .          
+22 .s1        -INF             .            +INF             .          
+23 .s0        -INF             .            +INF             .          
+23 .s1        -INF             .            +INF             .          
+24 .s0        -INF             .            +INF             .          
+24 .s1        -INF             .            +INF             .          
+25 .s0        -INF             .            +INF             .          
+25 .s1        -INF             .            +INF             .          
+26 .s0        -INF             .            +INF             .          
+26 .s1        -INF             .            +INF             .          
+27 .s0        -INF             .            +INF             .          
+27 .s1        -INF             .            +INF             .          
+28 .s0        -INF             .            +INF             .          
+28 .s1        -INF             .            +INF             .          
+29 .s0        -INF             .            +INF             .          
+29 .s1        -INF             .            +INF             .          
+30 .s0        -INF             .            +INF             .          
+30 .s1        -INF             .            +INF             .          
+31 .s0        -INF             .            +INF             .          
+31 .s1        -INF             .            +INF             .          
+32 .s0        -INF             .            +INF             .          
+32 .s1        -INF             .            +INF             .          
+33 .s0        -INF             .            +INF             .          
+33 .s1        -INF             .            +INF             .          
+34 .s0        -INF             .            +INF             .          
+34 .s1        -INF             .            +INF             .          
+35 .s0        -INF             .            +INF             .          
+35 .s1        -INF             .            +INF             .          
+36 .s0        -INF             .            +INF             .          
+36 .s1        -INF             .            +INF             .          
+37 .s0        -INF             .            +INF             .          
+37 .s1        -INF             .            +INF             .          
+38 .s0        -INF             .            +INF             .          
+38 .s1        -INF             .            +INF             .          
+39 .s0        -INF             .            +INF             .          
+39 .s1        -INF             .            +INF             .          
+40 .s0        -INF             .            +INF             .          
+40 .s1        -INF             .            +INF             .          
+41 .s0        -INF             .            +INF             .          
+41 .s1        -INF             .            +INF             .          
+42 .s0        -INF             .            +INF             .          
+42 .s1        -INF             .            +INF             .          
+43 .s0        -INF             .            +INF             .          
+43 .s1        -INF             .            +INF             .          
+44 .s0        -INF             .            +INF             .          
+44 .s1        -INF             .            +INF             .          
+45 .s0        -INF             .            +INF             .          
+GAMS 24.3.1  r47218 Released Jul 31, 2014 DEX-DEG x86 64bit/MacOS X                                                                                                                                                                   08/20/14 18:35:16 Page 53
+G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
+Solution Report     SOLVE stoch_wind_exp Using MIQCP From line 164
+
+
+     VAR k_hat  
+
+              LOWER          LEVEL          UPPER         MARGINAL
+
+45 .s1        -INF             .            +INF             .          
+46 .s0        -INF             .            +INF             .          
+46 .s1        -INF             .            +INF             .          
+47 .s0        -INF             .            +INF             .          
+47 .s1        -INF             .            +INF             .          
+48 .s0        -INF             .            +INF             .          
+48 .s1        -INF             .            +INF             .          
+49 .s0        -INF             .            +INF             .          
+49 .s1        -INF             .            +INF             .          
+50 .s0        -INF             .            +INF             .          
+50 .s1        -INF             .            +INF             .          
+51 .s0        -INF             .            +INF             .          
+51 .s1        -INF             .            +INF             .          
+52 .s0        -INF             .            +INF             .          
+52 .s1        -INF             .            +INF             .          
+53 .s0        -INF             .            +INF             .          
+53 .s1        -INF             .            +INF             .          
+54 .s0        -INF             .            +INF             .          
+54 .s1        -INF             .            +INF             .          
+55 .s0        -INF             .            +INF             .          
+55 .s1        -INF             .            +INF             .          
+56 .s0        -INF             .            +INF             .          
+56 .s1        -INF             .            +INF             .          
+57 .s0        -INF             .            +INF             .          
+57 .s1        -INF             .            +INF             .          
+58 .s0        -INF             .            +INF             .          
+58 .s1        -INF             .            +INF             .          
+59 .s0        -INF             .            +INF             .          
+59 .s1        -INF             .            +INF             .          
+60 .s0        -INF             .            +INF             .          
+60 .s1        -INF             .            +INF             .          
+61 .s0        -INF             .            +INF             .          
+61 .s1        -INF             .            +INF             .          
+62 .s0        -INF             .            +INF             .          
+62 .s1        -INF             .            +INF             .          
+63 .s0        -INF             .            +INF             .          
+63 .s1        -INF             .            +INF             .          
+64 .s0        -INF             .            +INF             .          
+64 .s1        -INF             .            +INF             .          
+65 .s0        -INF             .            +INF             .          
+65 .s1        -INF             .            +INF             .          
+66 .s0        -INF             .            +INF             .          
+66 .s1        -INF             .            +INF             .          
+67 .s0        -INF             .            +INF             .          
+67 .s1        -INF             .            +INF             .          
+68 .s0        -INF             .            +INF             .          
+68 .s1        -INF             .            +INF             .          
+69 .s0        -INF             .            +INF             .          
+69 .s1        -INF             .            +INF             .          
+GAMS 24.3.1  r47218 Released Jul 31, 2014 DEX-DEG x86 64bit/MacOS X                                                                                                                                                                   08/20/14 18:35:16 Page 54
+G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
+Solution Report     SOLVE stoch_wind_exp Using MIQCP From line 164
+
+
+     VAR k_hat  
+
+              LOWER          LEVEL          UPPER         MARGINAL
+
+70 .s0        -INF             .            +INF             .          
+70 .s1        -INF             .            +INF             .          
+71 .s0        -INF             .            +INF             .          
+71 .s1        -INF             .            +INF             .          
+72 .s0        -INF             .            +INF             .          
+72 .s1        -INF             .            +INF             .          
+73 .s0        -INF             .            +INF             .          
+73 .s1        -INF             .            +INF             .          
+74 .s0        -INF             .            +INF             .          
+74 .s1        -INF             .            +INF             .          
+75 .s0        -INF             .            +INF             .          
+75 .s1        -INF             .            +INF             .          
+76 .s0        -INF             .            +INF             .          
+76 .s1        -INF             .            +INF             .          
+77 .s0        -INF             .            +INF             .          
+77 .s1        -INF             .            +INF             .          
+78 .s0        -INF             .            +INF             .          
+78 .s1        -INF             .            +INF             .          
+79 .s0        -INF             .            +INF             .          
+79 .s1        -INF             .            +INF             .          
+80 .s0        -INF             .            +INF             .          
+80 .s1        -INF             .            +INF             .          
+81 .s0        -INF             .            +INF             .          
+81 .s1        -INF             .            +INF             .          
+82 .s0        -INF             .            +INF             .          
+82 .s1        -INF             .            +INF             .          
+83 .s0        -INF             .            +INF             .          
+83 .s1        -INF             .            +INF             .          
+84 .s0        -INF             .            +INF             .          
+84 .s1        -INF             .            +INF             .          
+85 .s0        -INF             .            +INF             .          
+85 .s1        -INF             .            +INF             .          
+86 .s0        -INF             .            +INF             .          
+86 .s1        -INF             .            +INF             .          
+87 .s0        -INF             .            +INF             .          
+87 .s1        -INF             .            +INF             .          
+88 .s0        -INF             .            +INF             .          
+88 .s1        -INF             .            +INF             .          
+89 .s0        -INF             .            +INF             .          
+89 .s1        -INF             .            +INF             .          
+90 .s0        -INF             .            +INF             .          
+90 .s1        -INF             .            +INF             .          
+91 .s0        -INF             .            +INF             .          
+91 .s1        -INF             .            +INF             .          
+92 .s0        -INF             .            +INF             .          
+92 .s1        -INF             .            +INF             .          
+93 .s0        -INF             .            +INF             .          
+93 .s1        -INF             .            +INF             .          
+94 .s0        -INF             .            +INF             .          
+GAMS 24.3.1  r47218 Released Jul 31, 2014 DEX-DEG x86 64bit/MacOS X                                                                                                                                                                   08/20/14 18:35:16 Page 55
+G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
+Solution Report     SOLVE stoch_wind_exp Using MIQCP From line 164
+
+
+     VAR k_hat  
+
+              LOWER          LEVEL          UPPER         MARGINAL
+
+94 .s1        -INF             .            +INF             .          
+95 .s0        -INF             .            +INF             .          
+95 .s1        -INF             .            +INF             .          
+96 .s0        -INF             .            +INF             .          
+96 .s1        -INF             .            +INF             .          
+97 .s0        -INF             .            +INF             .          
+97 .s1        -INF             .            +INF             .          
+98 .s0        -INF             .            +INF             .          
+98 .s1        -INF             .            +INF             .          
+99 .s0        -INF             .            +INF             .          
+99 .s1        -INF             .            +INF             .          
+100.s0        -INF             .            +INF             .          
+100.s1        -INF             .            +INF             .          
+
+---- VAR u_n_hi  
+
+          LOWER          LEVEL          UPPER         MARGINAL
+
+s0          .             1.0000         1.0000         EPS         
+s1          .             1.0000         1.0000         EPS         
+
+---- VAR u_n_lo  
+
+          LOWER          LEVEL          UPPER         MARGINAL
+
+s0          .              .             1.0000         EPS         
+s1          .              .             1.0000         EPS         
+
+---- VAR u_r_hi  
+
+          LOWER          LEVEL          UPPER         MARGINAL
+
+s0          .             1.0000         1.0000   3.750000E+10      
+s1          .             1.0000         1.0000   2.500000E+10      
+
+---- VAR u_r_lo  
+
+          LOWER          LEVEL          UPPER         MARGINAL
+
+s0          .             1.0000         1.0000         EPS         
+s1          .             1.0000         1.0000         EPS         
+
+                           LOWER          LEVEL          UPPER         MARGINAL
+
+---- VAR u_mcc               .              .             1.0000         EPS         
+GAMS 24.3.1  r47218 Released Jul 31, 2014 DEX-DEG x86 64bit/MacOS X                                                                                                                                                                   08/20/14 18:35:16 Page 56
+G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
+Solution Report     SOLVE stoch_wind_exp Using MIQCP From line 164
+
+
+**** REPORT SUMMARY :        0     NONOPT
+                             0 INFEASIBLE
+                             0  UNBOUNDED
+                             0     ERRORS
+GAMS 24.3.1  r47218 Released Jul 31, 2014 DEX-DEG x86 64bit/MacOS X                                                                                                                                                                   08/20/14 18:35:16 Page 57
+G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
+E x e c u t i o n
+
+
+----    166 VARIABLE gam_r_hi.L  
+
+                      ( ALL       0.000 )
+
+
+----    166 VARIABLE gam_r_lo.L  
+
+                      ( ALL       0.000 )
+
+
+----    166 VARIABLE gam_n_hi.L  
+
+                      ( ALL       0.000 )
+
+
+----    166 VARIABLE gam_n_lo.L  
+
+s0 20.000,    s1 20.000
+
+
+----    166 VARIABLE q_r.L  renewable generation
+
+s0 500.000,    s1 500.000
+
+
+----    166 VARIABLE q_n.L  non-renewable generation
+
+                      ( ALL       0.000 )
+
+
+----    166 VARIABLE r_inst.L              =      500.000  renewable capacity installed
+            VARIABLE p_rec.L               =        0.000  price of RECs
+
+----    166 VARIABLE lda.L  demand dual
+
+                      ( ALL       0.000 )
+
+
+----    166 VARIABLE r_costs.L             =     2500.000  objective function value
+
+
+EXECUTION TIME       =        0.025 SECONDS      3 MB  24.3.1 r47218 DEX-DEG
+
+
+USER: Spring/Summer Courses and Projects 2014        A140107:1021AO-GEN
+      Copenhagen University, Department of Mathematical Sciences DC9510
+      License for teaching and research at degree granting institutions
+
+
+**** FILE SUMMARY
+
+Input      /Users/andreasbock/Dropbox/ku/rps/src/1-38_wind_investment_stochastic_rps/wind_investment_stochastic.gms
+Output     /Users/andreasbock/Dropbox/ku/rps/src/1-38_wind_investment_stochastic_rps/wind_investment_stochastic.lst

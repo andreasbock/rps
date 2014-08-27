@@ -69,11 +69,20 @@ x = np.arange(11.2,560.2,11.2)
 
 for a in alphas:
 	fig = plt.figure()
-	fig.suptitle('Results for $\\alpha='+str(a)+'$')
+	plt.rc('text',usetex=True)
+	plt.rc('font',family='serif')
+	fig.suptitle(r'Results for $\alpha='+str(a)+'$')
 	ax = fig.add_subplot(111)
-	ax.set_xlabel('Expected Capacity ($E[w(\omega)]$)')
+	ax.grid(True)
+	ax.spines['top'].set_visible(False)
+	ax.spines['bottom'].set_smart_bounds(True)
+	for loc, spine in ax.spines.items():
+		if loc in ['left','bottom','right']:
+			spine.set_position(('outward',10))
+
+	ax.set_xlabel(r'Expected Capacity ($E[w(\omega)]$)')
 #	ax.set_xlabel('Expected Capacity ($\mathbb{E}\big[w(\omega)\big]$)')
-	ax.set_ylabel('Expected Profit of the renewable')
+	ax.set_ylabel(r'Expected Profit of the renewable')
 	ax.plot(x,z.T[int(a*10)])
 	fig.savefig("foo"+str(a)+".png",bbox_inches='tight')
 

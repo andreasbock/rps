@@ -6,18 +6,18 @@ Sets
 ;
 
 Scalar
-    a      RPS requirement                    /0.2/
+    a      RPS requirement                    /0.3/
     n_min  minimum non-renewable production   /0/
-    n_max  maximum non-renewable production   /500/
-    exp_bl renewable expansion blocks         /5/
-    c_inv  investment cost per unit           /10/
-    c_max  investment budget                  /1000/
-    d      demand for electricity             /400/
+    n_max  maximum non-renewable production   /600/
+    exp_bl renewable expansion blocks         /1/
+    c_inv  investment cost per unit           /5/
+    c_max  investment budget                  /3000/
+    d      demand for electricity             /600/
     M      constant                           /100000000/
 ;
 
 Parameter
-    w(s)   wind production           /s0 1.3, s1 0.8/
+    w(s)   wind production           /s0 2.5, s1 2/
     p(s)   probability of scenario s /s0 0.5, s1 0.5/
 ;
 
