@@ -10,5 +10,8 @@ clean:
 v:
 	vim -R $(file).lst
 
-g:
-	./plt.py $(file).lst
+3d:
+	./plot.py 3d
+
+sli:
+	./plot.py slices
