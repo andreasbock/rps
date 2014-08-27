@@ -102,7 +102,7 @@ loop(i,
     profits_rf_res(exp_w,i) = p.l * q_rf.l + (1-a)*p_rec.l*q_rf.l - 90*w;
     profits_nd_res(exp_w,i) = p.l * q_nd.l - a*p_rec.l*q_nd.l - 20*q_nd.l + 0.0005*power(q_nd.l,2);
     mcc_rhs_res(exp_w,i)    = (1-a)*q_rf.l - a*q_nd.l;
-);
+  );
 );
 
 display
