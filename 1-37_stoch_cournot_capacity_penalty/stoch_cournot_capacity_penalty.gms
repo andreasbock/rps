@@ -1,12 +1,13 @@
 *------------------------------------------------------------------*
 *------ Stochastic Cournot Duopoly with Capacity Constraints ------*
 *------------------------------------------------------------------*
+$offlisting
 
 set s /s0, s1/;
 
 parameter
     a         RPS requirement
-    penalty   penalty for not meeting the RPS requirement /80/
+    penalty   penalty for not meeting the RPS requirement /50/
     nd_max    max generation per stage /500/
     nd_min    min generation per stage /0/
     w         wind power per scenario
@@ -20,7 +21,7 @@ variables
     q_nd(s)     non-renewable generation in stage t
     q_n_pen(s)  non-renewable generation covered by penalty
     q_n_rec(s)    non-renewable generation covered by RECs
-    cost_nd(s)  cost of non-renewable generation in stage t
+    cost_nd(s)     cost of non-renewable generation in stage t
     gamma_rf_lo(s) dual of RF min generation constraint
     gamma_rf_hi(s) dual of RF max generation constraint
     gamma_nd_lo(s) dual of ND min generation constraint
@@ -30,13 +31,11 @@ variables
     phi_n_pen(s)   dual of non-negativity for penalty-covered generation
 ;
 
-*positive variables q_nd, q_rf;
-*positive variables q_n_rec, q_n_pen;
 positive variables gamma_nd_lo, gamma_nd_hi;
 positive variables gamma_rf_lo, gamma_rf_hi;
 positive variables p_rec;
 positive variables phi_n_pen, phi_n_rec;
-*positive variables psi_n;
+positive variables psi_n;
 
 equations
     grd_nd_a    gradient over RF lagrangian
@@ -60,20 +59,20 @@ equations
 ;
 
 *** Inverse demand function
-inv_demand(s) .. p(s) =e= 100 - 0.01*(q_nd(s) + q_rf(s));
+inv_demand(s) .. p(s) =e= 45 - 0.001*(q_nd(s) + q_rf(s));
 
 *** KKTs from renewable
-grd_rf(s) .. -p(s) + gamma_rf_hi(s)-gamma_rf_lo(s) - (1-a)*p_rec + 0.01*q_rf(s) =e= 0;
+grd_rf(s) .. -p(s) + gamma_rf_hi(s)-gamma_rf_lo(s) - (1-a)*p_rec + 0.001*q_rf(s) =e= 0;
 
 max_gen_rf(s) .. w(s) - q_rf(s) =g= 0;
 min_gen_rf(s) .. q_rf(s) =g= 0;
 
 *** KKTs from non-renewable
-grd_nd_a(s) .. - p(s) + gamma_nd_hi(s) - gamma_nd_lo(s) + 45 + 0.075*q_nd(s) + 0.01*q_nd(s) + a*psi_n(s) =e= 0;
+grd_nd_a(s) .. - p(s) + gamma_nd_hi(s) - gamma_nd_lo(s) + 35 + 0.01*q_nd(s) + 0.001*q_nd(s) + a*psi_n(s) =e= 0;
 grd_nd_b(s) .. p_rec   - psi_n(s) - phi_n_rec(s) =e= 0;
 grd_nd_c(s) .. penalty - psi_n(s) - phi_n_pen(s) =e= 0;
 
-penalty_cst(s) .. a * q_nd(s) =e= q_n_rec(s) + q_n_pen(s);
+penalty_cst(s) .. q_n_rec(s) + q_n_pen(s) =e= a * q_nd(s);
 max_gen_nd(s) .. nd_max - q_nd(s) =g= 0;
 min_gen_nd(s) .. q_nd(s) - nd_min =g= 0;
 
@@ -96,9 +95,9 @@ min_gen_nd.gamma_nd_lo,
 min_gen_n_pen.phi_n_pen,
 min_gen_n_rec.phi_n_rec,
 mcc.p_rec
-penalty_cst
+penalty_cst.psi_n
 /;
-
+option mcp=nlpec;
 *** Loop over all RPS levels
 set exp_w /e1*e50/;
 
@@ -128,8 +127,8 @@ loop(exp_w,
   solve compl using mcp;
   q_rf_res(exp_w,s)=q_rf.l(s);
   q_nd_res(exp_w,s)=q_nd.l(s);
-*  q_n_rec_res(exp_w,s)=q_n_rec.l(s);
-*  q_n_pen_res(exp_w,s)=q_n_pen.l(s);
+  q_n_rec_res(exp_w,s)=q_n_rec.l(s);
+  q_n_pen_res(exp_w,s)=q_n_pen.l(s);
   q_nd_res(exp_w,s)=q_nd.l(s);
   p_rec_res(exp_w)=p_rec.l;
 
@@ -143,8 +142,8 @@ loop(exp_w,
   p_res(exp_w,s)=p.l(s);
 * profits_rf_res(i) = sum(s,prb(s)*(p.l(s) * q_rf.l(s) + (1-a)*p_rec.l*q_rf.l(s) - 90*w(s)));
 * profits_nd_res(i,s) = p.l(s) * q_nd.l(s) - a*p_rec.l*q_nd.l(s) - 20*q_nd.l(s) + 0.0005*power(q_nd.l(s),2);
-  profits_rf_res(exp_w) = sum(s,prb(s)*(p.l(s) * q_rf.l(s) + (1-a)*p_rec.l*q_rf.l(s) - 90*w(s)));
-  profits_nd_res(exp_w) = sum(s,prb(s)*(p.l(s) * q_nd.l(s) - a*p_rec.l*q_nd.l(s) - 20*q_nd.l(s) + 0.0005*power(q_nd.l(s),2)));
+  profits_rf_res(exp_w) = sum(s,prb(s)*(p.l(s) * q_rf.l(s) + (1-a)*p_rec.l*q_rf.l(s) - 25*w(s)));
+  profits_nd_res(exp_w) = sum(s,prb(s)*(p.l(s) * q_nd.l(s) - a*p_rec.l*q_nd.l(s) - 35*q_nd.l(s) + 0.005*power(q_nd.l(s),2)));
 );
 
 display
@@ -157,9 +156,10 @@ q_nd_res,
 p_rec_res,
 p_res,
 profits_rf_res,
-profits_nd_res;
-*q_n_rec_res,
-*q_n_pen_res
+profits_nd_res,
+q_n_rec_res,
+q_n_pen_res
+;
 
 
 $exit
