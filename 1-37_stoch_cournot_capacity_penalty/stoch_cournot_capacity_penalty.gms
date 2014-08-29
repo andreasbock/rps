@@ -7,7 +7,7 @@ set s /s0, s1/;
 
 parameter
     a         RPS requirement
-    penalty   penalty for not meeting the RPS requirement /400/
+    penalty   penalty for not meeting the RPS requirement /30/
     nd_max    max generation per stage /500/
     nd_min    min generation per stage /0/
     w         wind power per scenario
@@ -35,11 +35,10 @@ positive variables gamma_nd_lo, gamma_nd_hi;
 positive variables gamma_rf_lo, gamma_rf_hi;
 positive variables p_rec;
 positive variables phi_n_pen, phi_n_rec;
-positive variables psi_n;
+*positive variables psi_n;
 
 equations
     grd_nd_a    gradient over RF lagrangian
-    grd_nd_az    gradient over RF lagrangian
     grd_nd_b    gradient over RF lagrangian
     grd_nd_c    gradient over RF lagrangian
     min_gen_nd  minimum generation
@@ -56,31 +55,33 @@ equations
     mcc    market-clearing constraint
     profit_rf_c profit of the fringe
     profit_nd_c profit of the dominant firm
+    ttc
 ;
 
 *** Inverse demand function
 inv_demand(s) .. p(s) =e= 100 - 0.01*(q_nd(s) + q_rf(s));
 
 *** KKTs from renewable
-grd_rf(s) .. - p(s) + gamma_rf_hi(s) - gamma_rf_lo(s) - theta_rec(s) + 0.01*q_rf(s) =e= 0;
+grd_rf(s) .. - p(s) + gamma_rf_hi(s) - gamma_rf_lo(s) - (1-a)*p_rec + 0.01*q_rf(s) =e= 0;
 
 max_gen_rf(s) .. w(s) - q_rf(s) =g= 0;
-min_gen_rf(s) .. q_rf(s) =g= 0;
+min_gen_rf(s) .. q_rf(s)        =g= 0;
 
 *** KKTs from non-renewable
-grd_nd_a(s) .. - p(s) + gamma_nd_hi(s) - gamma_nd_lo(s) + 30 + 0.005*q_nd(s) + 0.01*q_nd(s) + p_rec*theta_rec(s) + penalty*theta_pen(s) =e= 0;
+grd_nd_a(s) .. - p(s) + gamma_nd_hi(s) - gamma_nd_lo(s) + 20 + 0.001*q_nd(s) + 0.01*q_nd(s) - p_rec*theta_rec(s) - penalty*theta_pen(s) =e= 0;
 grd_nd_b(s) .. p_rec*q_nd(s)   - psi_n(s) - phi_n_rec(s) =e= 0;
 grd_nd_c(s) .. penalty*q_nd(s) - psi_n(s) - phi_n_pen(s) =e= 0;
 
-penalty_cst(s) .. theta_pen(s) + theta_rec(s) =g= a;
+penalty_cst(s) .. theta_pen(s) + theta_rec(s) =e= a;
 max_gen_nd(s) .. nd_max - q_nd(s) =g= 0;
 min_gen_nd(s) .. q_nd(s) - nd_min =g= 0;
 
-min_gen_n_pen(s) .. theta_rec(s) =g= 0;
-min_gen_n_rec(s) .. theta_pen(s) =g= 0;
+min_gen_n_pen(s) .. theta_pen(s) =g= 0;
+min_gen_n_rec(s) .. theta_rec(s) =g= 0;
 
 *** Market-clearing of certificates
-mcc .. sum(s, prb(s)*((1-theta_rec(s))*q_rf(s) - theta_rec(s)*q_nd(s))) =g= 0;
+*mcc .. sum(s, prb(s)*((1-theta_rec(s))*q_rf(s) - theta_rec(s)*q_nd(s))) =g= 0;
+mcc .. sum(s, prb(s)*((1-a)*q_rf(s) - theta_rec(s)*q_nd(s))) =g= 0;
 
 model compl
 /inv_demand,
@@ -94,8 +95,9 @@ max_gen_nd.gamma_nd_hi,
 min_gen_nd.gamma_nd_lo,
 min_gen_n_pen.phi_n_pen,
 min_gen_n_rec.phi_n_rec,
-mcc.p_rec
-penalty_cst.psi_n
+mcc.p_rec,
+penalty_cst
+*.psi_n
 /;
 
 *** Loop over all RPS levels
@@ -137,26 +139,26 @@ loop(exp_w,
   gamma_rf_hi_res(exp_w,s)=gamma_rf_hi.l(s);
   gamma_rf_lo_res(exp_w,s)=gamma_rf_lo.l(s);
   mymarg(exp_w,s)=max_gen_nd.m(s);
-  mymcc(exp_w) = sum(s, prb(s)*((1-a)*q_rf.l(s) - a*q_nd.l(s)));
-
+  mymcc(exp_w) = sum(s, prb(s)*((1-a+theta_pen.l(s))*q_rf.l(s) - theta_rec.l(s)*q_nd.l(s)));
   p_res(exp_w,s)=p.l(s);
 * profits_rf_res(i) = sum(s,prb(s)*(p.l(s) * q_rf.l(s) + (1-a)*p_rec.l*q_rf.l(s) - 90*w(s)));
 * profits_nd_res(i,s) = p.l(s) * q_nd.l(s) - a*p_rec.l*q_nd.l(s) - 20*q_nd.l(s) + 0.0005*power(q_nd.l(s),2);
   profits_rf_res(exp_w) = sum(s,prb(s)*(p.l(s) * q_rf.l(s) + (1-a)*p_rec.l*q_rf.l(s) - 25*w(s)));
-  profits_nd_res(exp_w) = sum(s,prb(s)*(p.l(s) * q_nd.l(s) - a*p_rec.l*q_nd.l(s) - 35*q_nd.l(s) + 0.005*power(q_nd.l(s),2)));
+  profits_nd_res(exp_w) = sum(s,prb(s)*(p.l(s) * q_nd.l(s) - a*p_rec.l*q_nd.l(s) - 20*q_nd.l(s) + 0.0005*power(q_nd.l(s),2)));
 );
 
 display
+p_res,
 q_rf_res,
 *gamma_rf_lo_res,
 *gamma_rf_hi_res,
 q_nd_res,
 *gamma_nd_lo_res,
 *gamma_nd_hi_res,
+mymcc,
 p_rec_res,
-p_res,
-profits_rf_res,
-profits_nd_res,
+*profits_rf_res,
+*profits_nd_res,
 theta_rec_res,
 theta_pen_res
 ;
