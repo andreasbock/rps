@@ -7,7 +7,7 @@ set s /s0, s1/;
 
 parameter
     a         RPS requirement
-    penalty   penalty for not meeting the RPS requirement /50/
+    penalty   penalty for not meeting the RPS requirement /400/
     nd_max    max generation per stage /500/
     nd_min    min generation per stage /0/
     w         wind power per scenario
@@ -19,8 +19,8 @@ variables
     p_rec       price of RECs
     q_rf(s)     renewable generation in stage t
     q_nd(s)     non-renewable generation in stage t
-    q_n_pen(s)  non-renewable generation covered by penalty
-    q_n_rec(s)    non-renewable generation covered by RECs
+    theta_pen(s) non-renewable generation covered by penalty
+    theta_rec(s) non-renewable generation covered by RECs
     cost_nd(s)     cost of non-renewable generation in stage t
     gamma_rf_lo(s) dual of RF min generation constraint
     gamma_rf_hi(s) dual of RF max generation constraint
@@ -59,28 +59,28 @@ equations
 ;
 
 *** Inverse demand function
-inv_demand(s) .. p(s) =e= 45 - 0.001*(q_nd(s) + q_rf(s));
+inv_demand(s) .. p(s) =e= 100 - 0.01*(q_nd(s) + q_rf(s));
 
 *** KKTs from renewable
-grd_rf(s) .. -p(s) + gamma_rf_hi(s)-gamma_rf_lo(s) - (1-a)*p_rec + 0.001*q_rf(s) =e= 0;
+grd_rf(s) .. - p(s) + gamma_rf_hi(s) - gamma_rf_lo(s) - theta_rec(s) + 0.01*q_rf(s) =e= 0;
 
 max_gen_rf(s) .. w(s) - q_rf(s) =g= 0;
 min_gen_rf(s) .. q_rf(s) =g= 0;
 
 *** KKTs from non-renewable
-grd_nd_a(s) .. - p(s) + gamma_nd_hi(s) - gamma_nd_lo(s) + 35 + 0.01*q_nd(s) + 0.001*q_nd(s) + a*psi_n(s) =e= 0;
-grd_nd_b(s) .. p_rec   - psi_n(s) - phi_n_rec(s) =e= 0;
-grd_nd_c(s) .. penalty - psi_n(s) - phi_n_pen(s) =e= 0;
+grd_nd_a(s) .. - p(s) + gamma_nd_hi(s) - gamma_nd_lo(s) + 30 + 0.005*q_nd(s) + 0.01*q_nd(s) + p_rec*theta_rec(s) + penalty*theta_pen(s) =e= 0;
+grd_nd_b(s) .. p_rec*q_nd(s)   - psi_n(s) - phi_n_rec(s) =e= 0;
+grd_nd_c(s) .. penalty*q_nd(s) - psi_n(s) - phi_n_pen(s) =e= 0;
 
-penalty_cst(s) .. q_n_rec(s) + q_n_pen(s) =e= a * q_nd(s);
+penalty_cst(s) .. theta_pen(s) + theta_rec(s) =g= a;
 max_gen_nd(s) .. nd_max - q_nd(s) =g= 0;
 min_gen_nd(s) .. q_nd(s) - nd_min =g= 0;
 
-min_gen_n_pen(s) .. q_n_pen(s) =g= 0;
-min_gen_n_rec(s) .. q_n_rec(s) =g= 0;
+min_gen_n_pen(s) .. theta_rec(s) =g= 0;
+min_gen_n_rec(s) .. theta_pen(s) =g= 0;
 
 *** Market-clearing of certificates
-mcc .. sum(s, prb(s)*((1-a)*q_rf(s) - a*q_nd(s))) =g= 0;
+mcc .. sum(s, prb(s)*((1-theta_rec(s))*q_rf(s) - theta_rec(s)*q_nd(s))) =g= 0;
 
 model compl
 /inv_demand,
@@ -97,7 +97,7 @@ min_gen_n_rec.phi_n_rec,
 mcc.p_rec
 penalty_cst.psi_n
 /;
-option mcp=nlpec;
+
 *** Loop over all RPS levels
 set exp_w /e1*e50/;
 
@@ -114,8 +114,8 @@ parameter profits_nd_res(exp_w);
 parameter mymarg(exp_w,s);
 parameter modifier_sc(s) /s0 1.2, s1 0.8/;
 parameter mymcc(exp_w);
-parameter q_n_rec_res(exp_w,s);
-parameter q_n_pen_res(exp_w,s);
+parameter theta_pen_res(exp_w,s);
+parameter theta_rec_res(exp_w,s);
 
 parameter expected_w_res(exp_w,s);
 
@@ -127,8 +127,8 @@ loop(exp_w,
   solve compl using mcp;
   q_rf_res(exp_w,s)=q_rf.l(s);
   q_nd_res(exp_w,s)=q_nd.l(s);
-  q_n_rec_res(exp_w,s)=q_n_rec.l(s);
-  q_n_pen_res(exp_w,s)=q_n_pen.l(s);
+  theta_rec_res(exp_w,s)=theta_rec.l(s);
+  theta_pen_res(exp_w,s)=theta_pen.l(s);
   q_nd_res(exp_w,s)=q_nd.l(s);
   p_rec_res(exp_w)=p_rec.l;
 
@@ -157,8 +157,8 @@ p_rec_res,
 p_res,
 profits_rf_res,
 profits_nd_res,
-q_n_rec_res,
-q_n_pen_res
+theta_rec_res,
+theta_pen_res
 ;
 
 
@@ -222,3 +222,4 @@ profits_rf_res,
 profits_nd_res,
 *expected_w_res
 ;
+
