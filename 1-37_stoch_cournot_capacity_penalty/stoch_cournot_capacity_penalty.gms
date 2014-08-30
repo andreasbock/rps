@@ -35,7 +35,7 @@ positive variables gamma_nd_lo, gamma_nd_hi;
 positive variables gamma_rf_lo, gamma_rf_hi;
 positive variables p_rec;
 positive variables phi_n_pen, phi_n_rec;
-*positive variables psi_n;
+positive variables psi_n;
 
 equations
     grd_nd_a    gradient over RF lagrangian
@@ -68,11 +68,11 @@ max_gen_rf(s) .. w(s) - q_rf(s) =g= 0;
 min_gen_rf(s) .. q_rf(s)        =g= 0;
 
 *** KKTs from non-renewable
-grd_nd_a(s) .. - p(s) + gamma_nd_hi(s) - gamma_nd_lo(s) + 20 + 0.001*q_nd(s) + 0.01*q_nd(s) - p_rec*theta_rec(s) - penalty*theta_pen(s) =e= 0;
+grd_nd_a(s) .. - p(s) + gamma_nd_hi(s) - gamma_nd_lo(s) + 20 + 0.001*q_nd(s) + 0.01*q_nd(s) + p_rec*theta_rec(s) + penalty*theta_pen(s) =e= 0;
 grd_nd_b(s) .. p_rec*q_nd(s)   - psi_n(s) - phi_n_rec(s) =e= 0;
 grd_nd_c(s) .. penalty*q_nd(s) - psi_n(s) - phi_n_pen(s) =e= 0;
 
-penalty_cst(s) .. theta_pen(s) + theta_rec(s) =e= a;
+penalty_cst(s) .. theta_pen(s) + theta_rec(s) =g= a;
 max_gen_nd(s) .. nd_max - q_nd(s) =g= 0;
 min_gen_nd(s) .. q_nd(s) - nd_min =g= 0;
 
@@ -96,8 +96,7 @@ min_gen_nd.gamma_nd_lo,
 min_gen_n_pen.phi_n_pen,
 min_gen_n_rec.phi_n_rec,
 mcc.p_rec,
-penalty_cst
-*.psi_n
+penalty_cst.psi_n
 /;
 
 *** Loop over all RPS levels
@@ -125,7 +124,7 @@ loop(exp_w,
   w(s) = 10*ord(exp_w)*modifier_sc(s);
   expected_w_res(exp_w,s) =w(s);
 
-  a=0.2;
+  a=0;
   solve compl using mcp;
   q_rf_res(exp_w,s)=q_rf.l(s);
   q_nd_res(exp_w,s)=q_nd.l(s);
@@ -139,7 +138,7 @@ loop(exp_w,
   gamma_rf_hi_res(exp_w,s)=gamma_rf_hi.l(s);
   gamma_rf_lo_res(exp_w,s)=gamma_rf_lo.l(s);
   mymarg(exp_w,s)=max_gen_nd.m(s);
-  mymcc(exp_w) = sum(s, prb(s)*((1-a+theta_pen.l(s))*q_rf.l(s) - theta_rec.l(s)*q_nd.l(s)));
+  mymcc(exp_w) = sum(s, prb(s)*((1-a)*q_rf.l(s) - theta_rec.l(s)*q_nd.l(s)));
   p_res(exp_w,s)=p.l(s);
 * profits_rf_res(i) = sum(s,prb(s)*(p.l(s) * q_rf.l(s) + (1-a)*p_rec.l*q_rf.l(s) - 90*w(s)));
 * profits_nd_res(i,s) = p.l(s) * q_nd.l(s) - a*p_rec.l*q_nd.l(s) - 20*q_nd.l(s) + 0.0005*power(q_nd.l(s),2);
@@ -157,8 +156,8 @@ q_nd_res,
 *gamma_nd_hi_res,
 mymcc,
 p_rec_res,
-*profits_rf_res,
-*profits_nd_res,
+profits_rf_res,
+profits_nd_res,
 theta_rec_res,
 theta_pen_res
 ;
