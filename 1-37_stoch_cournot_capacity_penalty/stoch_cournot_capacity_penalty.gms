@@ -137,6 +137,9 @@ parameter mr_res(exp_w);
 parameter cn_res(exp_w);
 parameter cr_res(exp_w);
 
+parameter r_rhs(exp_w);
+parameter n_rhs(exp_w);
+
 parameter modifier_sc(s) /s0 1.2, s1 0.8/;
 
 parameter expected_w_res(exp_w,s);
@@ -159,8 +162,11 @@ loop(exp_w,
   cr_res(exp_w)=cr.l;
   cn_res(exp_w)=cn.l;
 
-  profit_r(exp_w) = sum(s, tau(s)*p.l(s)*q_r.l(s)) + p_rec.l*cr.l - penalty*mr.l;
-  profit_n(exp_w) = sum(s, tau(s)*p.l(s)*q_n.l(s) - 20*q_n.l(s) + 0.0005*power(q_n.l(s),2)) - p_rec.l*cr.l - penalty*mr.l;
+  profit_r(exp_w) = sum(s, tau(s)*p.l(s)*q_r.l(s))                                          + p_rec.l*cr.l - penalty*mr.l;
+  profit_n(exp_w) = sum(s, tau(s)*p.l(s)*q_n.l(s) - 20*q_n.l(s) + 0.0005*power(q_n.l(s),2)) - p_rec.l*cn.l - penalty*mn.l;
+
+  r_rhs(exp_w) = (a-1)*(sum(s, tau(s)*q_r.l(s)));
+  n_rhs(exp_w) = a*(sum(s, tau(s)*q_n.l(s)));
 );
 
 display
@@ -173,5 +179,7 @@ profit_n,
 mr_res,
 mn_res,
 cr_res,
-cn_res
+cn_res,
+r_rhs,
+n_rhs
 ;
