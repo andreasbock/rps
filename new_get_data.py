@@ -1,4 +1,4 @@
-#!/usr/bin/python2
+#!/usr/bin/python
 from pylab import *
 import numpy as np
 import sys
@@ -71,7 +71,7 @@ for line in lines:
 #ax2.legend(my_plots[2:], legends[2:], 'upper right')
 ax1.legend(my_plots, legends, loc='upper center', bbox_to_anchor=(0.5, 1.125),fancybox=True, shadow=True, ncol=5)
 
-savefig('foo.png',bbox_inches='tight')
+savefig('foo.svg',bbox_inches='tight')
 #savefig('foo.png')
 
 
