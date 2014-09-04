@@ -12,3 +12,5 @@ v:
 
 g:
 	../new_get_data.py $(file).lst
+	inkscape -z -D --file=foo.svg --export-pdf=foo.pdf --export-latex
+	rm foo.svg

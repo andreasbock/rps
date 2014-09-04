@@ -4,9 +4,6 @@
 
 parameter
     a        RPS requirement
-*** Curtailment cost for RF
-    rf_crtl  curtailment cost of RF /15/
-
 *** ND costs
     nd_lin_cst linear term of ND cost /20/
     nd_qdr_cst quadratic term of ND cost /0.0005/
@@ -16,14 +13,12 @@ parameter
     p_lin  demand modifier /0.01/
 
     nd_max   max generation per stage /500/
-*   nd_max   max generation per stage /362/
     nd_min   min generation per stage /0/
 
     rf_min   min generation per stage /0/
 
 *** Wind "power"
     w /250/
-*   w /362/
 ;
 
 variables
@@ -36,8 +31,6 @@ variables
     gamma_rf_hi dual of RF max generation constraint
     gamma_nd_lo dual of ND min generation constraint
     gamma_nd_hi dual of ND max generation constraint
-*   profit_rf 
-*   profit_nd
 ;
 
 positive variables gamma_nd_lo, gamma_nd_hi;
@@ -111,8 +104,4 @@ q_rf_res,
 q_nd_res,
 p_rec_res,
 p_res
-*r_lo,
-*r_hi,
-*n_lo,
-*n_hi
 ;
