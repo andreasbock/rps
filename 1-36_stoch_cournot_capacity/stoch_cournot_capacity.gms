@@ -100,7 +100,7 @@ loop(exp_w,
   w(s) = 10*ord(exp_w)*modifier_sc(s);
   expected_w_res(exp_w,s) =w(s);
 
-  a=0.1;
+  a=0.5;
   solve compl using mcp;
 
   q_r_res(exp_w,s)=q_r.l(s);
@@ -108,15 +108,15 @@ loop(exp_w,
   p_rec_res(exp_w)=p_rec.l;
   p_res(exp_w,s)=p.l(s);
 
-* profit_r(exp_w) = sum(s, tau(s)*p.l(s)*q_r.l(s))                                          + p_rec.l*cr.l -  penalty*mr.l;
-* profit_n(exp_w) = sum(s, tau(s)*p.l(s)*q_n.l(s) - 20*q_n.l(s) + 0.0005*power(q_n.l(s),2)) - p_rec.l*cn.l - penalty*mn.l;
+  profit_r(exp_w) = sum(s, tau(s)*p.l(s)*q_r.l(s))                                          + (1-a)*p_rec.l*sum(s,tau(s)*q_r.l(s));
+  profit_n(exp_w) = sum(s, tau(s)*p.l(s)*q_n.l(s) - 20*q_n.l(s) + 0.0005*power(q_n.l(s),2)) - a*p_rec.l*sum(s,tau(s)*q_r.l(s));
 );
 
 display
 p_res,
 q_r_res,
 q_n_res,
-p_rec_res
-*profit_r,
-*profit_n
+p_rec_res,
+profit_r,
+profit_n
 ;

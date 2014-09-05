@@ -506,45 +506,153 @@ e498     -89.242     -89.242     -89.242     -89.242     -89.242     870.902    
 e499     -94.610     -94.610     -94.610     -94.610     -94.610     760.676    6874.152    7693.909    6548.675    4614.945    2400.390
 e500    -100.000    -100.000    -100.000    -100.000    -100.000    -100.000    6854.971    7691.139    6551.151    4617.316    2400.000"""
 
+
+power_price_raw="""e1       99.790      99.810
+e2       99.579      99.621
+e3       99.369      99.431
+e4       99.158      99.242
+e5       98.948      99.052
+e6       98.737      98.863
+e7       98.527      98.673
+e8       98.316      98.484
+e9       98.106      98.294
+e10      97.895      98.105
+e11      97.685      97.915
+e12      97.474      97.726
+e13      97.264      97.536
+e14      97.053      97.347
+e15      96.843      97.157
+e16      96.632      96.968
+e17      96.422      96.778
+e18      96.211      96.589
+e19      96.001      96.399
+e20      95.790      96.210
+e21      95.580      96.020
+e22      95.370      95.830
+e23      95.159      95.641
+e24      94.949      95.451
+e25      94.738      95.262
+e26      94.528      95.072
+e27      94.317      94.883
+e28      94.107      94.693
+e29      93.896      94.504
+e30      93.686      94.314
+e31      93.475      94.125
+e32      93.265      93.935
+e33      93.054      93.746
+e34      92.844      93.556
+e35      92.633      93.367
+e36      92.423      93.177
+e37      92.212      92.988
+e38      92.002      92.798
+e39      91.791      92.609
+e40      91.581      92.419
+e41      91.370      92.230
+e42      91.160      92.040
+e43      90.950      91.850
+e44      90.739      91.661
+e45      90.529      91.471
+e46      90.280      91.320
+e47      89.960      91.240
+e48      89.640      91.160
+e49      89.320      91.080
+e50      89.000      91.000"""
+
+profit_r_raw = """e1  1.565135E+7,    e2  3.121338E+7,    e3  4.668611E+7,    e4  6.206952E+7,    e5  7.736363E+7,    e6  9.256843E+7,    e7  1.076839E+8,    e8  1.227101E+8,    e9  1.376470E+8,    e10 1.524945E+8,    e11 1.672528E+8,    e12 1.819217E+8,    e13 1.965014E+8
+e14 2.109917E+8,    e15 2.253927E+8,    e16 2.397044E+8,    e17 2.539268E+8,    e18 2.680599E+8,    e19 2.821037E+8,    e20 2.960581E+8,    e21 3.099233E+8,    e22 3.236991E+8,    e23 3.373857E+8,    e24 3.509829E+8,    e25 3.644908E+8,    e26 3.779094E+8
+e27 3.912387E+8,    e28 4.044787E+8,    e29 4.176294E+8,    e30 4.306908E+8,    e31 4.436628E+8,    e32 4.565456E+8,    e33 4.693390E+8,    e34 4.820432E+8,    e35 4.946580E+8,    e36 5.071835E+8,    e37 5.196197E+8,    e38 5.319666E+8,    e39 5.442242E+8
+e40 5.563925E+8,    e41 5.684714E+8,    e42 5.804611E+8,    e43 5.923615E+8,    e44 6.041725E+8,    e45 6.158942E+8,    e46 6.271752E+8,    e47 6.376783E+8,    e48 6.480481E+8,    e49 6.582847E+8,    e50 6.683880E+8"""
+
+profit_n_raw ="""e1  1753279.103,    e2  3525916.413,    e3  5317911.929,    e4  7129265.651,    e5  8959977.579,    e6  1.081005E+7,    e7  1.267948E+7,    e8  1.456826E+7,    e9  1.647641E+7,    e10 1.840391E+7,    e11 2.035077E+7,    e12 2.231699E+7,    e13 2.430257E+7
+e14 2.630750E+7,    e15 2.833180E+7,    e16 3.037545E+7,    e17 3.243846E+7,    e18 3.452083E+7,    e19 3.662256E+7,    e20 3.874364E+7,    e21 4.088408E+7,    e22 4.304389E+7,    e23 4.522305E+7,    e24 4.742156E+7,    e25 4.963944E+7,    e26 5.187667E+7
+e27 5.413327E+7,    e28 5.640922E+7,    e29 5.870453E+7,    e30 6.101919E+7,    e31 6.335322E+7,    e32 6.570660E+7,    e33 6.807934E+7,    e34 7.047144E+7,    e35 7.288290E+7,    e36 7.531372E+7,    e37 7.776389E+7,    e38 8.023342E+7,    e39 8.272232E+7
+e40 8.523057E+7,    e41 8.775817E+7,    e42 9.030514E+7,    e43 9.287146E+7,    e44 9.545714E+7,    e45 9.806218E+7,    e46 1.010048E+8,    e47 1.045761E+8,    e48 1.081858E+8,    e49 1.118338E+8,    e50 1.155202E+8"""
+
+rec_price_raw= """e1  159.380,    e2  158.760,    e3  158.140,    e4  157.520,    e5  156.900,    e6  156.280,    e7  155.660,    e8  155.040,    e9  154.420,    e10 153.800,    e11 153.180,    e12 152.560,    e13 151.940,    e14 151.320,    e15 150.700,    e16 150.080
+e17 149.460,    e18 148.840,    e19 148.220,    e20 147.600,    e21 146.980,    e22 146.360,    e23 145.740,    e24 145.120,    e25 144.500,    e26 143.880,    e27 143.260,    e28 142.640,    e29 142.020,    e30 141.400,    e31 140.780,    e32 140.160
+e33 139.540,    e34 138.920,    e35 138.300,    e36 137.680,    e37 137.060,    e38 136.440,    e39 135.820,    e40 135.200,    e41 134.580,    e42 133.960,    e43 133.340,    e44 132.720,    e45 132.100,    e46 131.320,    e47 130.240,    e48 129.160
+e49 128.080,    e50 127.000"""
+
+# THIS DETERMINES TO USE MATRIX OR THE ARRAY PROFIT
+one_dim = True
+
 opt = str(sys.argv[1])
 rc('text',usetex=True)
 rc('font',family='serif')
 profit_raw_split = profit_raw.split('\n')
 rows = len(profit_raw_split)
 
-z = np.zeros(shape=(501,11))
+if one_dim:
+	profit_r = np.zeros(shape=(50))
+	i = 0
+	for p_raw in profit_r_raw.split('\n'):
+		for p_raw2 in p_raw.split(','):
+			profit_r[i] = float(p_raw2.split()[1])
+			i+=1
+
+	profit_n = np.zeros(shape=(50))
+	i = 0
+	for p_raw in profit_n_raw.split('\n'):
+		for p_raw2 in p_raw.split(','):
+			profit_n[i] = float(p_raw2.split()[1])
+			i+=1
+else:
+	z = np.zeros(shape=(50,11))
+	i = 0
+	for p_raw in profit_raw.split('\n'):
+	    p = p_raw.split()[1:]
+	    z[i] = np.array(map(float, p))
+	    i +=1
+
+power_price = np.zeros(shape=(50,2))
 
 i = 0
-for p_raw in profit_raw.split('\n'):
+for p_raw in power_price_raw.split('\n'):
     p = p_raw.split()[1:]
-    z[i] = np.array(map(float, p))
+    power_price[i] = np.array(map(float, p))
     i +=1
 
-if opt == "3d":
+rec_price = np.zeros(shape=(50))
+
+i = 0
+for p_raw in rec_price_raw.split('\n'):
+	for p_raw2 in p_raw.split(','):
+		rec_price[i] = float(p_raw2.split()[1])
+		i+=1
+
+if opt == "3d" and not one_dim:
 	fig = plt.figure()
 	ax = fig.add_subplot(111, projection='3d')
 	ax.set_xlabel(r'RPS ($\alpha$)')
-	ax.set_ylabel(r'Expected Capacity ($E[w(\omega)]$)')
+	ax.set_ylabel(r'Average Capacity ($E[w(\omega)]$)')
 	ax.set_zlabel(r'Profit of the renewable')
 	rps      = np.arange(0,1.1,0.1)
-	capacity = np.arange(1,502,1)
+	capacity = np.arange(1,51,1)
 	x,y = np.meshgrid(rps,capacity)
 	ax.plot_surface(x, y, z, cmap=cm.gnuplot)
 
-
 	fig.savefig('foo3d.png',bbox_inches='tight')
 else:
-	alphas = [0.3,0.5,0.7]
+	alphas = [0.5]
 
-	x = np.arange(1,rows+2)
+	x = 10*np.arange(1,51)
 
 	for a in alphas:
 		fig = plt.figure()
 		ax = fig.add_subplot(111)
-		fig.suptitle(r'$\alpha='+str(a)+'$')
-		ax.set_xlabel(r'Expected Capacity ($E[w(\omega)]$)')
-		ax.set_ylabel(r'Profit of the renewable')
-		ax.plot(x,z.T[int(a*10)])
-		fig.savefig("foo"+str(a)+".png",bbox_inches='tight')
-
-
+		ax2 = ax.twinx()
+		ax2.set_ylabel(r"Prices ($p(\omega)$, $p_{REC}$)")
+		power_prices1,  = ax2.plot(x,power_price.T[0],'--',c='black')
+		#print power_price.T[0]; exit()
+		power_prices2,  = ax2.plot(x,power_price.T[1],'.')
+		rec_price_plot, = ax2.plot(x,rec_price,'x')
+		ax.set_xlabel(r'Average Renewable Capacity ($E[w(\omega)]$)')
+		ax.set_ylabel(r'Profit of the producers')
+		if one_dim:
+			profit_r_plt,= ax.plot(x,profit_r,'s')
+			profit_n_plt,= ax.plot(x,profit_n)
+		else:
+			profit,= ax.plot(x,z.T[int(a*10)])
+		#ax.legend([profit_r_plt,power_prices1,power_prices2], ["Profit","Power price, scenario 1 (high)", "Power price, scenario 2 (low)"], loc='upper center', bbox_to_anchor=(0, -0.125),fancybox=True, shadow=True, ncol=5)
+		ax.legend([profit_r_plt,profit_n_plt,power_prices1,power_prices2,rec_price_plot], ["$\Xi_r$","$\Xi_n$","$p_e^1$","$p_e^2$", "$p_{REC}$"], loc='upper center', bbox_to_anchor=(0.5, -0.125),fancybox=True, shadow=True, ncol=5)
+		fig.savefig("foo.svg",bbox_inches='tight')

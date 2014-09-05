@@ -15,3 +15,6 @@ v:
 
 sli:
 	./plot.py slices
+	inkscape -z -D --file=foo.svg --export-pdf=foo.pdf --export-latex
+	rm foo.svg
+	rm *pdf_tex
