@@ -5,7 +5,9 @@ all:
 
 clean:
 	rm $(file).lst
-	rm *.png
+	rm *.svg
+	rm *.pdf
+	rm *.pdf_tex
 	rm *.lst
 
 v:
@@ -16,3 +18,8 @@ v:
 
 sli:
 	./plot.py slices
+	inkscape -z -D --file=foo.svg --export-pdf=foo.pdf --export-latex
+	inkscape -z -D --file=fooprod.svg --export-pdf=fooprod.pdf --export-latex
+	rm foo.svg
+	rm fooprod.svg
+	rm *pdf_tex

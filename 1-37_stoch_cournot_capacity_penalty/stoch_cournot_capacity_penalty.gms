@@ -7,12 +7,11 @@ set s /s0, s1/;
 
 parameter
     a         RPS requirement
-    penalty   penalty for not meeting the RPS requirement /30/
-    n_max    max generation per stage /500/
+    penalty   penalty for not meeting the RPS requirement /20/
+    n_max    max generation per stage /4000/
     n_min    min generation per stage /0/
     w(s)      wind power per scenario
     tau(s)    prob of scenario         /s0 4360, s1 4360/
-    M /1000/
 ;
 
 variables
@@ -142,13 +141,13 @@ parameter n_rhs(exp_w);
 
 parameter modifier_sc(s) /s0 1.2, s1 0.8/;
 
-parameter expected_w_res(exp_w,s);
+parameter expected_w_res(exp_w);
 
 loop(exp_w,
-  w(s) = 10*ord(exp_w)*modifier_sc(s);
-  expected_w_res(exp_w,s) =w(s);
+  w(s) = 50*ord(exp_w)*modifier_sc(s);
+  expected_w_res(exp_w)=sum(s, w(s));
 
-  a=0.3;
+  a=0.0;
   solve compl using mcp;
 
   q_r_res(exp_w,s)=q_r.l(s);
@@ -170,6 +169,7 @@ loop(exp_w,
 );
 
 display
+expected_w_res,
 p_res,
 q_r_res,
 q_n_res,
