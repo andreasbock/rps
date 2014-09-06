@@ -242,6 +242,7 @@ else:
 	for a in alphas:
 		fig = plt.figure()
 		ax = fig.add_subplot(111)
+		ax.grid(True)
 		ax2 = ax.twinx()
 		ax2.set_ylabel(r"Prices ($p(\omega)$, $p_{REC}$)")
 		power_prices1,  = ax2.plot(x,power_price.T[0],'--',c='black')
@@ -262,12 +263,13 @@ else:
 	for a in alphas:
 		fig = plt.figure()
 		ax = fig.add_subplot(111)
+		ax.grid(True)
 		ax.set_xlabel(r'Expected Renewable Capacity ($E_t[w^t]$)')
 		ax.set_ylabel(r"Quantities ($q_r^t$, $q_n^t$)")
 		q_r_plt1, = ax.plot(x,q_r.T[0],'--',c='green')
 		q_r_plt2, = ax.plot(x,q_r.T[1],'.',c='green')
-		q_n_plt1, = ax.plot(x,q_r.T[0],'x',c='black')
-		q_n_plt2, = ax.plot(x,q_r.T[1],'k',c='black')
+		q_n_plt1, = ax.plot(x,q_n.T[0],'x',c='black')
+		q_n_plt2, = ax.plot(x,q_n.T[1],'k',c='black')
 
 		ax.legend([q_r_plt1, q_r_plt2, q_n_plt1, q_n_plt2], ["$q_r^1$","$q_r^2$","$q_n^1$","$q_n^2$"], loc='upper center', bbox_to_anchor=(0.5, -0.125),fancybox=True, shadow=True, ncol=5)
 		fig.savefig("fooprod.svg",bbox_inches='tight')

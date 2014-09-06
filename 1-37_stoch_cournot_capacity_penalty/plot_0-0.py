@@ -568,7 +568,7 @@ e14 4.080762E+8,    e15 4.076403E+8,    e16 4.072043E+8,    e17 4.067683E+8,    
 e27 4.024083E+8,    e28 4.019723E+8,    e29 4.015362E+8,    e30 4.011003E+8,    e31 4.006642E+8,    e32 4.002283E+8,    e33 3.997923E+8,    e34 3.993563E+8,    e35 3.989203E+8,    e36 3.984843E+8,    e37 3.980483E+8,    e38 3.976123E+8,    e39 3.971763E+8
 e40 3.967403E+8,    e41 3.963043E+8,    e42 3.958683E+8,    e43 3.954323E+8,    e44 3.949963E+8,    e45 3.945603E+8,    e46 3.941243E+8,    e47 3.936883E+8,    e48 3.932523E+8,    e49 3.928163E+8,    e50 3.923803E+8"""
 
-prod_r_raw="""e1     3780.952    3790.476
+prod_n_raw="""e1     3780.952    3790.476
 e2     3752.381    3771.429
 e3     3723.810    3752.381
 e4     3695.238    3733.333
@@ -619,7 +619,7 @@ e48    2438.095    2895.238
 e49    2409.524    2876.190
 e50    2380.952    2857.143"""
 
-prod_n_raw="""e1       60.000      40.000
+prod_r_raw="""e1       60.000      40.000
 e2      120.000      80.000
 e3      180.000     120.000
 e4      240.000     160.000
@@ -737,13 +737,14 @@ if opt == "3d" and not one_dim:
 
 	fig.savefig('foo3d.png',bbox_inches='tight')
 else:
-	alphas = [0.5]
+	alphas = [0]
 
 	x = 100*np.arange(1,51)
 
 	for a in alphas:
 		fig = plt.figure()
 		ax = fig.add_subplot(111)
+		ax.grid(True)
 		ax2 = ax.twinx()
 		ax2.set_ylabel(r"Prices ($p(\omega)$, $p_{REC}$)")
 		power_prices1,  = ax2.plot(x,power_price.T[0],'--',c='black')
@@ -764,12 +765,13 @@ else:
 	for a in alphas:
 		fig = plt.figure()
 		ax = fig.add_subplot(111)
+		ax.grid(True)
 		ax.set_xlabel(r'Expected Renewable Capacity ($E_t[w^t]$)')
 		ax.set_ylabel(r"Quantities ($q_r^t$, $q_n^t$)")
 		q_r_plt1, = ax.plot(x,q_r.T[0],'--',c='green')
 		q_r_plt2, = ax.plot(x,q_r.T[1],'.',c='green')
-		q_n_plt1, = ax.plot(x,q_r.T[0],'x',c='black')
-		q_n_plt2, = ax.plot(x,q_r.T[1],'k',c='black')
+		q_n_plt1, = ax.plot(x,q_n.T[0],'x',c='black')
+		q_n_plt2, = ax.plot(x,q_n.T[1],'k',c='black')
 
 		ax.legend([q_r_plt1, q_r_plt2, q_n_plt1, q_n_plt2], ["$q_r^1$","$q_r^2$","$q_n^1$","$q_n^2$"], loc='upper center', bbox_to_anchor=(0.5, -0.125),fancybox=True, shadow=True, ncol=5)
 		fig.savefig("fooprod.svg",bbox_inches='tight')
