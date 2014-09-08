@@ -9,6 +9,7 @@ parameters
 	c_r_max /300/
 
 	a
+	w /400/
 ;
 
 variables
@@ -32,7 +33,7 @@ variables
 
 	phi_n
 	phi_r
-	
+
 	delta_n
 	delta_r
 
@@ -41,6 +42,8 @@ variables
 
 	nu_r_lo(b_r)
 	nu_r_hi(b_r)
+
+	mu_r
 ;
 
 positive variables eta_r_lo, eta_r_hi;
@@ -48,6 +51,7 @@ positive variables eta_n_lo, eta_n_hi;
 positive variables nu_r_lo, nu_r_hi;
 positive variables nu_n_lo, nu_n_hi;
 positive variables delta_n, delta_r;
+positive variables mu_r;
 
 equations
 	grd_n_a
@@ -60,6 +64,7 @@ equations
 
 	min_r
 	max_r
+	wind_r
 
 	min_n
 	max_n
@@ -80,7 +85,7 @@ equations
 	mcc
 ;
 
-grd_n_a .. p =e= 20 + 0.001*q_n + a*p_rec + 0.01*q_n - eta_n_lo + eta_n_hi;
+grd_n_a .. p =e= 20 + 0.001*q_n + a*p_rec + 0.01*q_n - eta_n_lo + eta_n_hi + mu_r;
 grd_n_b .. c_n - eta_n_hi + delta_n + phi_n =e= 0;
 grd_n_c(b_n) .. - phi_n - nu_n_lo(b_n) + nu_n_hi(b_n) =e= 0;
 
@@ -97,6 +102,7 @@ r_bound .. c_r_max - X_r =g= 0;
 
 min_r  .. q_r =g= 0;
 max_r  .. X_r =g= q_r;
+wind_r .. w =g= q_r;
 disc_r .. sum(b_r,u_r(b_r)) - X_r =e= 0;
 bin_n_lo(b_n) .. u_n(b_n) =g= 0;
 bin_n_hi(b_n) .. 1 - u_n(b_n) =g= 0;
@@ -115,6 +121,7 @@ grd_r_b,
 grd_r_c,
 min_r.eta_r_lo,
 max_r.eta_r_hi,
+wind_r.mu_r,
 min_n.eta_n_lo,
 max_n.eta_n_hi,
 disc_n.phi_n,
@@ -136,7 +143,9 @@ display
 q_r.l,
 q_n.l,
 X_r.l,
-X_n.l
+X_n.l,
+u_r.l,
+u_n.l
 ;
 
 
