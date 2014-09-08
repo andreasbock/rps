@@ -72,6 +72,4 @@ for line in lines:
 ax1.legend(my_plots, legends, loc='upper center', bbox_to_anchor=(0.5, 1.125),fancybox=True, shadow=True, ncol=5)
 
 savefig('foo.svg',bbox_inches='tight')
-#savefig('foo.png')
-
 

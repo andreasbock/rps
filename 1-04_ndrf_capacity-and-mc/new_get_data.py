@@ -1,4 +1,4 @@
-#!/usr/bin/python2
+#!/usr/bin/python
 from pylab import *
 import numpy as np
 import sys
@@ -26,7 +26,7 @@ def parse_result(line):
 
 legends = ['$q_r$', '$q_n$', '$p_{REC}$', '$p$']
 cols   = ['green', 'red', 'blue', 'purple']
-styles   = ['^', '--', 's', '4']
+styles   = ['^', '--', 's', '-']
 rps    = np.arange(0,1.1,0.1)
 
 #figure()
@@ -82,15 +82,10 @@ total = np.zeros(11)
 for i in range(11):
     total[i]=(1-float(i)/10.0)*pz[0][i] - float(i)/10.0*pz[1][i]
 
-for i in total:
-    print i
-#exit()
 idx=2
 my_plots[idx], = ax2.plot(rps, [0.0]*11,styles[idx], c=cols[idx], label=legends[idx], linewidth=2)
 #ax1.legend(my_plots[:2], legends[:2], 'upper left')
 #ax2.legend(my_plots[2:], legends[2:], 'upper right')
 ax1.legend(my_plots, legends, loc='upper center', bbox_to_anchor=(0.5, 1.125),fancybox=True, shadow=True, ncol=5)
 
-#legend = legend(loc='upper right', shadow=True)
-savefig('foo.png',bbox_inches='tight')
-
+savefig('foo.svg',bbox_inches='tight')

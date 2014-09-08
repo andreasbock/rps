@@ -1,0 +1,10 @@
+file=investment_compl
+
+all:
+	gams $(file).gms
+
+v:
+	vim -R $(file).lst
+
+g:
+	../new_get_data.py $(file).lst
