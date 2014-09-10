@@ -1,4 +1,4 @@
-file=ndrf_stoch
+file=ndrf_stoch_miqcp
 
 all:
 	gams $(file).gms

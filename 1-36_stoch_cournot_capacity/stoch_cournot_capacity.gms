@@ -66,7 +66,7 @@ max_r(s)  .. w(s) - q_r(s) =g= 0;
 grd_n(s) .. tau(s)*(-p(s) + 0.01*q_n(s)) + tau(s)*(20 + 0.001*q_n(s)) - gamma_n_lo(s) + gamma_n_hi(s) + a*tau(s)*p_rec =e= 0;
 
 min_n(s) .. q_n(s) =g= 0;
-max_n(s)  .. n_max - q_n(s) =g= 0;
+max_n(s) .. n_max - q_n(s) =g= 0;
 
 mcc .. sum(s, tau(s)*(1-a)*q_r(s)) - sum(s,tau(s)*a*q_n(s)) =g= 0;
 *mcc .. sum(s, tau(s)*((1-a)*q_r(s) - a*q_n(s))) =g= 0;
@@ -83,7 +83,7 @@ mcc.p_rec
 /;
 
 *** Loop over all RPS levels
-set exp_w /e1*e50/;
+set exp_w /e1*e75/;
 
 parameter q_r_res(exp_w,s);
 parameter q_n_res(exp_w,s);
@@ -92,7 +92,7 @@ parameter p_res(exp_w,s);
 parameter profit_n(exp_w);
 parameter profit_r(exp_w);
 
-parameter modifier_sc(s) /s0 1.2, s1 0.8/;
+parameter modifier_sc(s) /s0 1, s1 0.6/;
 
 parameter expected_w_res(exp_w,s);
 
@@ -108,7 +108,7 @@ loop(exp_w,
   p_rec_res(exp_w)=p_rec.l;
   p_res(exp_w,s)=p.l(s);
 
-  profit_r(exp_w) = sum(s, tau(s)*p.l(s)*q_r.l(s))                                          + (1-a)*p_rec.l*sum(s,tau(s)*q_r.l(s));
+  profit_r(exp_w) = sum(s, tau(s)*p.l(s)*q_r.l(s))                                      + (1-a)*p_rec.l*sum(s,tau(s)*q_r.l(s));
   profit_n(exp_w) = sum(s, tau(s)*p.l(s)*q_n.l(s) - 20*q_n.l(s) + 0.0005*power(q_n.l(s),2)) - a*p_rec.l*sum(s,tau(s)*q_r.l(s));
 );
 

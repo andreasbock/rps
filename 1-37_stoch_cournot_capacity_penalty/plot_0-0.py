@@ -558,10 +558,10 @@ e48      89.240      91.160
 e49      89.120      91.080
 e50      89.000      91.000"""
 
-profit_r_raw = """e1  8274931.200,    e2  1.653172E+7,    e3  2.477038E+7,    e4  3.299090E+7,    e5  4.119328E+7,    e6  4.937752E+7,    e7  5.754363E+7,    e8  6.569160E+7,    e9  7.382143E+7,    e10 8.193312E+7,    e11 9.002668E+7,    e12 9.810209E+7,    e13 1.061594E+8
-e14 1.141985E+8,    e15 1.222195E+8,    e16 1.302224E+8,    e17 1.382071E+8,    e18 1.461737E+8,    e19 1.541222E+8,    e20 1.620525E+8,    e21 1.699647E+8,    e22 1.778587E+8,    e23 1.857346E+8,    e24 1.935924E+8,    e25 2.014320E+8,    e26 2.092535E+8
-e27 2.170568E+8,    e28 2.248421E+8,    e29 2.326091E+8,    e30 2.403581E+8,    e31 2.480889E+8,    e32 2.558015E+8,    e33 2.634961E+8,    e34 2.711725E+8,    e35 2.788307E+8,    e36 2.864708E+8,    e37 2.940928E+8,    e38 3.016967E+8,    e39 3.092824E+8
-e40 3.168499E+8,    e41 3.243993E+8,    e42 3.319306E+8,    e43 3.394438E+8,    e44 3.469388E+8,    e45 3.544157E+8,    e46 3.618744E+8,    e47 3.693150E+8,    e48 3.767375E+8,    e49 3.841418E+8,    e50 3.915280E+8"""
+profit_r_raw = """e1  2.621672E+7,    e2  5.089592E+7,    e3  7.403761E+7,    e4  9.564178E+7,    e5  1.157084E+8,    e6  1.342376E+8,    e7  1.512292E+8,    e8  1.666833E+8,    e9  1.805999E+8,    e10 1.929790E+8,    e11 2.038205E+8,    e12 2.131245E+8,    e13 2.208911E+8
+e14 2.271201E+8,    e15 2.318116E+8,    e16 2.349655E+8,    e17 2.365820E+8,    e18 2.366609E+8,    e19 2.352024E+8,    e20 2.322063E+8,    e21 2.276727E+8,    e22 2.216016E+8,    e23 2.139929E+8,    e24 2.048468E+8,    e25 1.941631E+8,    e26 1.819419E+8
+e27 1.681832E+8,    e28 1.528870E+8,    e29 1.360533E+8,    e30 1.176820E+8,    e31 9.777323E+7,    e32 7.632695E+7,    e33 5.334315E+7,    e34 2.882183E+7,    e35 2763000.000,    e36 -2.48333E+7,    e37 -5.39672E+7,    e38 -8.46386E+7,    e39 -1.16847E+8
+e40 -1.50594E+8,    e41 -1.85878E+8,    e42 -2.22699E+8,    e43 -2.61058E+8,    e44 -3.00955E+8,    e45 -3.42389E+8,    e46 -3.85360E+8,    e47 -4.29869E+8,    e48 -4.75916E+8,    e49 -5.23500E+8,    e50 -5.72621E+8"""
 
 profit_n_raw ="""e1  4.137443E+8,    e2  4.133082E+8,    e3  4.128723E+8,    e4  4.124363E+8,    e5  4.120003E+8,    e6  4.115643E+8,    e7  4.111283E+8,    e8  4.106923E+8,    e9  4.102563E+8,    e10 4.098203E+8,    e11 4.093843E+8,    e12 4.089483E+8,    e13 4.085123E+8
 e14 4.080762E+8,    e15 4.076403E+8,    e16 4.072043E+8,    e17 4.067683E+8,    e18 4.063323E+8,    e19 4.058963E+8,    e20 4.054603E+8,    e21 4.050242E+8,    e22 4.045883E+8,    e23 4.041523E+8,    e24 4.037163E+8,    e25 4.032803E+8,    e26 4.028443E+8
@@ -672,7 +672,7 @@ e50    3000.000    2000.000"""
 # THIS DETERMINES TO USE MATRIX OR THE ARRAY PROFIT
 one_dim = True
 
-opt = str(sys.argv[1])
+opt = "2d"
 rc('text',usetex=True)
 rc('font',family='serif')
 profit_raw_split = profit_raw.split('\n')
@@ -760,7 +760,7 @@ else:
 			profit,= ax.plot(x,z.T[int(a*10)])
 		#ax.legend([profit_r_plt,power_prices1,power_prices2], ["Profit","Power price, scenario 1 (high)", "Power price, scenario 2 (low)"], loc='upper center', bbox_to_anchor=(0, -0.125),fancybox=True, shadow=True, ncol=5)
 		ax.legend([profit_r_plt,profit_n_plt,power_prices1,power_prices2,rec_price_plot], ["$\Xi_r$","$\Xi_n$","$p_e^1$","$p_e^2$", "$p_{REC}$"], loc='upper center', bbox_to_anchor=(0.5, -0.125),fancybox=True, shadow=True, ncol=5)
-		fig.savefig("foo.svg",bbox_inches='tight')
+		fig.savefig("foo.png",bbox_inches='tight')
 
 	for a in alphas:
 		fig = plt.figure()
@@ -774,4 +774,4 @@ else:
 		q_n_plt2, = ax.plot(x,q_n.T[1],'k',c='black')
 
 		ax.legend([q_r_plt1, q_r_plt2, q_n_plt1, q_n_plt2], ["$q_r^1$","$q_r^2$","$q_n^1$","$q_n^2$"], loc='upper center', bbox_to_anchor=(0.5, -0.125),fancybox=True, shadow=True, ncol=5)
-		fig.savefig("fooprod.svg",bbox_inches='tight')
+		fig.savefig("fooprod.png",bbox_inches='tight')

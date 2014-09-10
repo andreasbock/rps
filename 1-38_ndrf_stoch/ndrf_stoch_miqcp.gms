@@ -8,7 +8,7 @@ set s /s0, s1/;
 
 parameter
     a         RPS requirement
-    n_max    max generation per stage /500/
+    n_max    max generation per stage /5000/
     n_min    min generation per stage /0/
     w(s)      wind power per scenario
     tau(s)    prob of scenario         /s0 4360, s1 4360/
@@ -124,10 +124,10 @@ parameter expected_w_res(exp_w,s);
 parameter logi(exp_w);
 
 loop(exp_w,
-  w(s)=10*ord(exp_w)*modifier_sc(s);
+  w(s)=100*ord(exp_w)*modifier_sc(s);
   expected_w_res(exp_w,s) =w(s);
 
-  a=0.0;
+  a=0.5;
   solve ndrf_stoch min costsv using mpec;
 
   logi(exp_w)=logv.l;

@@ -265,12 +265,15 @@ else:
 		for loc, spine in ax2.spines.items():
 			if loc in ['left','bottom','right']:
 				spine.set_position(('outward',10)) # outward by 10 points
+		
+		ax.set_yticks(np.linspace(0, ax.get_ybound()[1]+1, 9))
+		ax2.set_yticks(np.linspace(0, ax2.get_ybound()[1]+1, 9))
 
-		ax2.set_ylabel(r"Prices ($p(\omega)$, $p_{REC}$)")
-		power_prices1,  = ax2.plot(x,power_price.T[0],'--',c='black')
-		power_prices2,  = ax2.plot(x,power_price.T[1],'.')
-		rec_price_plot, = ax2.plot(x,rec_price,'x')
-		ax.set_xlabel(r'Average Renewable Capacity ($E[w(\omega)]$)')
+		ax2.set_ylabel(r"REC Price ($p_{REC}$)")
+		#power_prices1,  = ax2.plot(x,power_price.T[0],'--',c='black')
+		#power_prices2,  = ax2.plot(x,power_price.T[1],'.')
+		rec_price_plot, = ax2.plot(x,rec_price,'x',c='red')
+		ax.set_xlabel(r'Renewable Capacity ($w$)')
 		ax.set_ylabel(r'Profit of the producers')
 		if one_dim:
 			profit_r_plt,= ax.plot(x,profit_r,'s')
@@ -278,9 +281,10 @@ else:
 		else:
 			profit,= ax.plot(x,z.T[int(a*10)])
 		#ax.legend([profit_r_plt,power_prices1,power_prices2], ["Profit","Power price, scenario 1 (high)", "Power price, scenario 2 (low)"], loc='upper center', bbox_to_anchor=(0, -0.125),fancybox=True, shadow=True, ncol=5)
-		ax.legend([profit_r_plt,profit_n_plt,power_prices1,power_prices2,rec_price_plot], ["$\Xi_r$","$\Xi_n$","$p_e^1$","$p_e^2$", "$p_{REC}$"], loc='upper center', bbox_to_anchor=(0.5, -0.125),fancybox=True, shadow=True, ncol=5)
+		#ax.legend([profit_r_plt,profit_n_plt,power_prices1,power_prices2,rec_price_plot], ["$\Xi_r$","$\Xi_n$","$p_e^1$","$p_e^2$", "$p_{REC}$"], loc='upper center', bbox_to_anchor=(0.5, -0.125),fancybox=True, shadow=True, ncol=5)
+		ax.legend([profit_r_plt,profit_n_plt,rec_price_plot], ["$\Xi_r$","$\Xi_n$","$p_{REC}$"], loc='upper center', bbox_to_anchor=(0.5, -0.125),fancybox=True, shadow=True, ncol=5)
 		fig.savefig("foo.svg",bbox_inches='tight')
-
+		exit()
 	for a in alphas:
 		fig = plt.figure()
 		ax = fig.add_subplot(111)
@@ -300,3 +304,4 @@ else:
 
 		ax.legend([q_r_plt1, q_r_plt2, q_n_plt1, q_n_plt2], ["$q_r^1$","$q_r^2$","$q_n^1$","$q_n^2$"], loc='upper center', bbox_to_anchor=(0.5, -0.125),fancybox=True, shadow=True, ncol=5)
 		fig.savefig("fooprod.svg",bbox_inches='tight')
+

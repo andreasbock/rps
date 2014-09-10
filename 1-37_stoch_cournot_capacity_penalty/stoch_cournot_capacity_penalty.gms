@@ -77,9 +77,9 @@ equations
 ;
 
 *** Inverse demand function
-inv_demand(s) .. p(s) =e= 100 - 0.01*(q_n(s) + q_r(s));
+inv_demand(s) .. p(s) =e= 95 - 0.08*(q_n(s) + q_r(s));
 
-grd_r_a(s) .. tau(s)*(- p(s) + 0.01*q_r(s)) - gamma_r_lo(s) + gamma_r_hi(s) + tau(s)*delta_r*(a-1) =e= 0;
+grd_r_a(s) .. -tau(s)*p(s) + tau(s)*0.01*q_r(s) - gamma_r_lo(s) + gamma_r_hi(s) + tau(s)*delta_r*(a-1) =e= 0;
 grd_r_b .. - p_rec + delta_r - psi_r =e= 0;
 grd_r_c .. penalty - phi_r - delta_r =e= 0;
 
@@ -89,7 +89,7 @@ min_mr .. mr =g= 0;
 min_cr .. cr =g= 0;
 mr_bound .. mr - (a-1)*(sum(s, tau(s)*q_r(s))) - cr =g= 0;
 
-grd_n_a(s) .. tau(s)*(-p(s) + 0.01*q_n(s)) + tau(s)*(20 + 0.001*q_n(s)) - gamma_n_lo(s) + gamma_n_hi(s) + tau(s)*delta_n*a =e= 0;
+grd_n_a(s) .. -tau(s)*p(s) + tau(s)*0.01*q_n(s) + tau(s)*(10 + 0.001*q_n(s)) - gamma_n_lo(s) + gamma_n_hi(s) + tau(s)*delta_n*a =e= 0;
 grd_n_b .. p_rec   - delta_n - psi_n =e= 0;
 grd_n_c .. penalty - phi_n - delta_n =e= 0;
 
@@ -144,10 +144,10 @@ parameter modifier_sc(s) /s0 1.2, s1 0.8/;
 parameter expected_w_res(exp_w);
 
 loop(exp_w,
-  w(s) = 50*ord(exp_w)*modifier_sc(s);
+  w(s) = 55*ord(exp_w)*modifier_sc(s);
   expected_w_res(exp_w)=sum(s, w(s));
 
-  a=0.0;
+  a=0.2;
   solve compl using mcp;
 
   q_r_res(exp_w,s)=q_r.l(s);
@@ -161,8 +161,9 @@ loop(exp_w,
   cr_res(exp_w)=cr.l;
   cn_res(exp_w)=cn.l;
 
-  profit_r(exp_w) = sum(s, tau(s)*p.l(s)*q_r.l(s))                                          + p_rec.l*cr.l - penalty*mr.l;
-  profit_n(exp_w) = sum(s, tau(s)*p.l(s)*q_n.l(s) - 20*q_n.l(s) + 0.0005*power(q_n.l(s),2)) - p_rec.l*cn.l - penalty*mn.l;
+  profit_r(exp_w) = sum(s, tau(s)*p.l(s)*q_r.l(s))                                  + p_rec.l*cr.l - penalty*mr.l - 1500*expected_w_res(exp_w);
+* - 17*power(expected_w_res(exp_w),2);
+  profit_n(exp_w) = sum(s, tau(s)*p.l(s)*q_n.l(s) - 10*q_n.l(s) + 0.0005*power(q_n.l(s),2)) - p_rec.l*cn.l - penalty*mn.l - 7*expected_w_res(exp_w);
 
   r_rhs(exp_w) = (a-1)*(sum(s, tau(s)*q_r.l(s)));
   n_rhs(exp_w) = a*(sum(s, tau(s)*q_n.l(s)));
@@ -175,7 +176,7 @@ q_r_res,
 q_n_res,
 p_rec_res,
 profit_r,
-profit_n,
+profit_n
 mr_res,
 mn_res,
 cr_res,

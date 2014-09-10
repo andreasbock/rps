@@ -85,11 +85,11 @@ equations
 	mcc
 ;
 
-grd_n_a .. p =e= 20 + 0.001*q_n + a*p_rec + 0.01*q_n - eta_n_lo + eta_n_hi + mu_r;
+grd_n_a .. p =e= 20 + 0.001*q_n + a*p_rec + 0.01*q_n - eta_n_lo + eta_n_hi;
 grd_n_b .. c_n - eta_n_hi + delta_n + phi_n =e= 0;
 grd_n_c(b_n) .. - phi_n - nu_n_lo(b_n) + nu_n_hi(b_n) =e= 0;
 
-grd_r_a .. p =e= -(1-a)*p_rec + 0.01*q_r - eta_r_lo + eta_r_hi;
+grd_r_a .. p =e= -(1-a)*p_rec + 0.01*q_r - eta_r_lo + eta_r_hi + mu_r;
 grd_r_b .. c_r - eta_r_hi + delta_r + phi_r =e= 0;
 grd_r_c(b_r) .. - phi_r - nu_r_lo(b_r) + nu_r_hi(b_r) =e= 0;
 

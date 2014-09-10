@@ -56,17 +56,18 @@ e48      46.819      51.848
 e49      46.505      51.638
 e50      46.190      51.429"""
 
-profit_r_raw = """e1  3.467819E+7,    e2  6.911887E+7,    e3  1.033220E+8,    e4  1.372877E+8,    e5  1.710158E+8,    e6  2.045064E+8,    e7  2.377595E+8,    e8  2.707751E+8,    e9  3.035532E+8,    e10 3.360937E+8,    e11 3.683967E+8,    e12 4.004623E+8,    e13 4.322903E+8
-e14 4.638807E+8,    e15 4.952337E+8,    e16 5.263492E+8,    e17 4.278348E+8,    e18 4.473509E+8,    e19 4.699474E+8,    e20 4.923063E+8,    e21 5.144277E+8,    e22 5.363116E+8,    e23 5.579579E+8,    e24 5.793668E+8,    e25 6.005381E+8,    e26 6.214719E+8
-e27 6.421682E+8,    e28 6.626270E+8,    e29 6.828483E+8,    e30 7.028320E+8,    e31 7.225782E+8,    e32 7.420869E+8,    e33 7.613581E+8,    e34 7.803918E+8,    e35 7.991880E+8,    e36 8.177467E+8,    e37 8.360678E+8,    e38 8.541514E+8,    e39 8.719975E+8
-e40 8.896061E+8,    e41 9.069772E+8,    e42 9.241107E+8,    e43 9.410068E+8,    e44 9.576653E+8,    e45 9.740863E+8,    e46 9.902698E+8,    e47 1.006216E+9,    e48 1.021924E+9,    e49 1.037395E+9,    e50 1.052629E+9"""
+profit_r_raw = """e1  9293470.927,    e2  1.805637E+7,    e3  2.628869E+7,    e4  3.399044E+7,    e5  4.116161E+7,    e6  4.780221E+7,    e7  5.391223E+7,    e8  5.949168E+7,    e9  6.454055E+7,    e10 6.905885E+7,    e11 7.304658E+7,    e12 7.650373E+7,    e13 7.943030E+7
+e14 8.182630E+7,    e15 8.369173E+7,    e16 8.501607E+7,    e17 8.604688E+7,    e18 8.691445E+7,    e19 8.761876E+7,    e20 8.815981E+7,    e21 8.853761E+7,    e22 8.875216E+7,    e23 8.880346E+7,    e24 8.868098E+7,    e25 8.851598E+7,    e26 8.835098E+7
+e27 8.818598E+7,    e28 8.802098E+7,    e29 8.785598E+7,    e30 8.769098E+7,    e31 8.752598E+7,    e32 8.736098E+7,    e33 8.719598E+7,    e34 8.703098E+7,    e35 8.686598E+7,    e36 8.670098E+7,    e37 8.653598E+7,    e38 8.637098E+7,    e39 8.620598E+7
+e40 8.604098E+7,    e41 8.587598E+7,    e42 8.571098E+7,    e43 8.554598E+7,    e44 8.538098E+7,    e45 8.521598E+7,    e46 8.505098E+7,    e47 8.488598E+7,    e48 8.472098E+7,    e49 8.455598E+7,    e50 8.439098E+7"""
 
-profit_n_raw ="""e1  1.866718E+9,    e2  1.846205E+9,    e3  1.825806E+9,    e4  1.805520E+9,    e5  1.785347E+9,    e6  1.765287E+9,    e7  1.745340E+9,    e8  1.725506E+9,    e9  1.705785E+9,    e10 1.686178E+9,    e11 1.666683E+9,    e12 1.647302E+9,    e13 1.628034E+9
-e14 1.608879E+9,    e15 1.589837E+9,    e16 1.570908E+9,    e17 1.702299E+9,    e18 1.686665E+9,    e19 1.667205E+9,    e20 1.647859E+9,    e21 1.628625E+9,    e22 1.609505E+9,    e23 1.590498E+9,    e24 1.571604E+9,    e25 1.552823E+9,    e26 1.534155E+9
-e27 1.515600E+9,    e28 1.497158E+9,    e29 1.478830E+9,    e30 1.460614E+9,    e31 1.442512E+9,    e32 1.424523E+9,    e33 1.406646E+9,    e34 1.388883E+9,    e35 1.371233E+9,    e36 1.353697E+9,    e37 1.336273E+9,    e38 1.318962E+9,    e39 1.301765E+9
-e40 1.284680E+9,    e41 1.267709E+9,    e42 1.250851E+9,    e43 1.234105E+9,    e44 1.217473E+9,    e45 1.200954E+9,    e46 1.184549E+9,    e47 1.168256E+9,    e48 1.152076E+9,    e49 1.136010E+9,    e50 1.120056E+9"""
+profit_n_raw ="""e1  1.865358E+7,    e2  3.677658E+7,    e3  5.436901E+7,    e4  3.399044E+7,    e5  4.116161E+7,    e6  4.780221E+7,    e7  5.391223E+7,    e8  5.949168E+7,    e9  6.454055E+7,    e10 6.905885E+7,    e11 7.304658E+7,    e12 7.650373E+7,    e13 7.943030E+7
+e14 8.182630E+7,    e15 8.369173E+7,    e16 8.501607E+7,    e17 8.604688E+7,    e18 8.691445E+7,    e19 8.761876E+7,    e20 8.815981E+7,    e21 8.853761E+7,    e22 8.875216E+7,    e23 8.880346E+7,    e24 8.868098E+7,    e25 8.851598E+7,    e26 8.835098E+7
+e27 8.818598E+7,    e28 8.802098E+7,    e29 8.785598E+7,    e30 8.769098E+7,    e31 8.752598E+7,    e32 8.736098E+7,    e33 8.719598E+7,    e34 8.703098E+7,    e35 8.686598E+7,    e36 8.670098E+7,    e37 8.653598E+7,    e38 8.637098E+7,    e39 8.620598E+7
+e40 8.604098E+7,    e41 8.587598E+7,    e42 8.571098E+7,    e43 8.554598E+7,    e44 8.538098E+7,    e45 8.521598E+7,    e46 8.505098E+7,    e47 8.488598E+7,    e48 8.472098E+7,    e49 8.455598E+7,    e50 8.439098E+7"""
 
-rec_price_raw="""e1  20.000,    e2  20.000,    e3  20.000,    e4  20.000,    e5  20.000,    e6  20.000,    e7  20.000,    e8  20.000,    e9  20.000,    e10 20.000,    e11 20.000,    e12 20.000,    e13 20.000,    e14 20.000,    e15 20.000,    e16 20.000,    e17  0.500"""
+rec_price_raw="""e1  20.000,    e2  20.000,    e3  20.000"""
+#rec_price_raw="""e1  20.000,    e2  20.000,    e3  20.000,    e4  20.000,    e5  20.000,    e6  20.000,    e7  20.000,    e8  20.000,    e9  20.000,    e10 20.000,    e11 20.000,    e12 20.000,    e13 20.000,    e14 20.000,    e15 20.000,    e16 20.000,    e17  0.500"""
 
 prod_r_raw="""e1       60.000      40.000
 e2      120.000      80.000
@@ -172,7 +173,7 @@ e50    2380.952    2857.143"""
 
 one_dim = True
 
-opt = str(sys.argv[1])
+opt ="2d"
 rc('text',usetex=True)
 rc('font',family='serif')
 
@@ -191,6 +192,15 @@ if one_dim:
 		for p_raw2 in p_raw.split(','):
 			profit_n[i] = float(p_raw2.split()[1])
 			i+=1
+
+comb = zip(profit_r,100*np.arange(1,51))
+max = float("-inf")
+res = None
+for (p,r) in comb:
+	if max < p:
+		max = p; res=r
+
+print res
 
 power_price = np.zeros(shape=(50,2))
 
@@ -237,7 +247,7 @@ if opt == "3d" and not one_dim:
 else:
 	alphas = [0.5]
 
-	x = 100*np.arange(1,51)
+	x = 55*np.arange(2,52)
 
 	for a in alphas:
 		fig = plt.figure()
@@ -245,11 +255,11 @@ else:
 		ax.grid(True)
 		ax2 = ax.twinx()
 		ax2.set_ylabel(r"Prices ($p(\omega)$, $p_{REC}$)")
-		power_prices1,  = ax2.plot(x,power_price.T[0],'--',c='black')
+		#power_prices1,  = ax2.plot(x,power_price.T[0],'--',c='black')
 		#print power_price.T[0]; exit()
-		power_prices2,  = ax2.plot(x,power_price.T[1],'.')
+		#power_prices2,  = ax2.plot(x,power_price.T[1],'.')
 		rec_price_plot, = ax2.plot(x,rec_price,'x')
-		ax.set_xlabel(r'Expected Renewable Capacity ($E_t[w^t]$)')
+		ax.set_xlabel(r'Installed Capacity ($w$)')
 		ax.set_ylabel(r'Profit of the producers')
 		if one_dim:
 			profit_r_plt,= ax.plot(x,profit_r,'s')
@@ -257,9 +267,12 @@ else:
 		else:
 			profit,= ax.plot(x,z.T[int(a*10)])
 		#ax.legend([profit_r_plt,power_prices1,power_prices2], ["Profit","Power price, scenario 1 (high)", "Power price, scenario 2 (low)"], loc='upper center', bbox_to_anchor=(0, -0.125),fancybox=True, shadow=True, ncol=5)
-		ax.legend([profit_r_plt,profit_n_plt,power_prices1,power_prices2,rec_price_plot], ["$\Xi_r$","$\Xi_n$","$p_e^1$","$p_e^2$", "$p_{REC}$"], loc='upper center', bbox_to_anchor=(0.5, -0.125),fancybox=True, shadow=True, ncol=5)
-		fig.savefig("foo.svg",bbox_inches='tight')
-
+		#ax.legend([profit_r_plt,profit_n_plt,power_prices1,power_prices2,rec_price_plot], ["$\Xi_r$","$\Xi_n$","$p_e^1$","$p_e^2$", "$p_{REC}$"], loc='upper center', bbox_to_anchor=(0.5, -0.125),fancybox=True, shadow=True, ncol=5)
+		ax.legend([profit_r_plt,profit_n_plt,rec_price_plot], [r"$\Xi_r$, 0\% RPS",r"$\Xi_r$, 20\% RPS",r"$p_{REC}$"], loc='upper center', bbox_to_anchor=(0.5, -0.125),fancybox=True, shadow=True, ncol=5)
+#		ax.legend([profit_r_plt,profit_n_plt,rec_price_plot], ["$\Xi_r$,$\alpha=0$","$\Xi_r$,$\alpha=0.2$","$p_e^1$","$p_e^2$", "$p_{REC}$"], loc='upper center', bbox_to_anchor=(0.5, -0.125),fancybox=True, shadow=True, ncol=5)
+		fig.savefig("foo2.png",bbox_inches='tight')
+		print "here"
+	exit()
 	for a in alphas:
 		fig = plt.figure()
 		ax = fig.add_subplot(111)
@@ -272,4 +285,4 @@ else:
 		q_n_plt2, = ax.plot(x,q_n.T[1],'k',c='black')
 
 		ax.legend([q_r_plt1, q_r_plt2, q_n_plt1, q_n_plt2], ["$q_r^1$","$q_r^2$","$q_n^1$","$q_n^2$"], loc='upper center', bbox_to_anchor=(0.5, -0.125),fancybox=True, shadow=True, ncol=5)
-		fig.savefig("fooprod.svg",bbox_inches='tight')
+		fig.savefig("fooprod.png",bbox_inches='tight')
