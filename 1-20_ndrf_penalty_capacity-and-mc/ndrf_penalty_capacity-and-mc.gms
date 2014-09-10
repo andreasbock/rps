@@ -1,98 +1,173 @@
-*--- ND-RF Model with penalty and capacity constraints and new MCs
-
+*--- ND-RF Model with new MC and capacity constraints and penalty term
 $offlisting
 
+set s /s0, s1/;
+
 parameter
-    a        RPS requirement
-    n_max   max generation per stage /2000/
-    n_min   min generation per stage /0/
-    w        wind power               /2000/
-    cp       compliance payment       /100/
+    a         RPS requirement
+    penalty   penalty for not meeting the RPS requirement /20/
+    n_max    max generation per stage /4000/
+    n_min    min generation per stage /0/
+    w(s)      wind power per scenario /s0 2000, s1 2500/
+    tau(s)    prob of scenario         /s0 4360, s1 4360/
 ;
 
 variables
     n_costs profit of the non-renewable dominant
-    p        electricity price
-    p_rec    price of RECs
-    q_n      non-renewable generation
-    q_r      renewable generation
-    eta_r_lo dual of lower bound on generation
-    eta_r_hi dual of upper bound on generation
-    u        binary for setting p_rec
-    dummy    dummy for cp-p_rec
+
+    p(s)       electricity price
+    p_rec      price of RECs
+    q_r(s)     renewable generation
+    q_n(s)     non-renewable generation
+
+    mr
+    mn
+
+    cr
+    cn
+
+    gamma_r_lo(s)
+    gamma_r_hi(s)
+
+    phi_r
+    delta_r
+    psi_r
 ;
 
-positive variables q_n, q_r, p, p_rec, eta_r_lo, eta_r_hi;
-binary variable u;
+positive variables gamma_n_lo, gamma_n_hi;
+positive variables gamma_r_lo, gamma_r_hi;
+positive variables p_rec;
+positive variables phi_n, phi_r;
+positive variables psi_n, psi_r;
+positive variables delta_n, delta_r;
 
 equations
-    costs      objective function
-    inv_demand inverse demand function
-    grd_r      gradient over RF lagrangian
-    mc_a       market-clearing complementarity RHS
-    mc_b       market-clearing complementarity LHS
-    max_n      maximum generation of non-renewable
-    min_n      minimum generation of non-renewable
-    max_r      maximum generation of renewable
-    min_r      minimum generation of renewable
-    p_rec_disc discretise p_rec
-    dummy_c
+    costs
+    max_n
+    min_n
+    min_mn
+    min_cn
+    mn_bound
+
+    grd_r_a
+    grd_r_b
+    grd_r_c
+    min_r
+    max_r
+    min_mr
+    min_cr
+    mr_bound
+
+    mcc
+    inv_demand
 ;
 
-costs .. n_costs =e= 20*q_n+0.0005*power(q_n,2) + a*p_rec*q_n - p*q_n;
-max_n .. n_max - q_n =g= 0;
-min_n .. q_n - n_min =g= 0;
+costs .. n_costs =e= sum(s,tau(s)*(20*q_n(s) +0.0005*power(q_n(s),2) -p(s)*q_n(s))) + p_rec*cn + penalty*mn;
 
-grd_r .. p =e= - (1-a)*p_rec + eta_r_hi - eta_r_lo;
-max_r .. w - q_r =g= 0;
-min_r .. q_r =g= 0;
+min_n(s) .. q_n(s) =g= 0;
+max_n(s) .. n_max - q_n(s) =g= 0;
+min_mn .. mn =g= 0;
+min_cn .. cn =g= 0;
 
-inv_demand .. p =e= 100 - 0.01*(q_n+q_r);
+mn_bound .. mn - a*(sum(s, tau(s)*q_n(s))) + cn =g= 0;
 
-mc_a .. (1-a)*q_r - a*q_n =g= 0;
-mc_b .. cp - p_rec =g= 0;
-p_rec_disc .. p_rec =e= cp*u;
+mcc .. cr - cn =g= 0;
+inv_demand(s) .. p(s) =e= 100 - 0.01*(q_n(s)+q_r(s));
 
-dummy_c .. dummy =e= cp - p_rec;
+grd_r_a(s) .. - tau(s)*p(s) - gamma_r_lo(s) + gamma_r_hi(s) + tau(s)*delta_r*(a-1) =e= 0;
+grd_r_b .. - p_rec + delta_r - psi_r =e= 0;
+grd_r_c .. penalty - phi_r - delta_r =e= 0;
+
+min_r(s) .. q_r(s) =g= 0;
+max_r(s) .. w(s) - q_r(s) =g= 0;
+min_mr .. mr =g= 0;
+min_cr .. cr =g= 0;
+mr_bound .. mr - (a-1)*(sum(s, tau(s)*q_r(s))) - cr =g= 0;
 
 
-model ndrf
+model ndrf_penalty
 /costs,
-grd_r,
-inv_demand,
 max_n,
 min_n,
-max_r.eta_r_hi,
-min_r.eta_r_lo,
-mc_a.dummy,
-mc_b,
-*p_rec_disc,
-dummy_c
+min_mn,
+min_cn,
+mn_bound,
+grd_r_a,
+grd_r_b,
+grd_r_c,
+min_r.gamma_r_lo,
+max_r.gamma_r_hi,
+min_mr.phi_r,
+min_cr.psi_r,
+mr_bound.delta_r,
+mcc.p_rec,
+inv_demand
 /;
 
+a = 0.4;
+solve ndrf_penalty using qcp min n_costs;
+display q_n.l, q_r.l, p_rec.l;
+
+$exit
+
 *** Loop over all RPS levels
-set i /i1*i11/;
+set exp_w /e1*e50/;
 
-parameter q_r_res(i);
-parameter q_n_res(i);
-parameter p_rec_res(i);
-parameter p_res(i);
-parameter profits_r(i);
-parameter profits_n(i);
-parameter nd_costsp(i);
+parameter q_r_res(exp_w,s);
+parameter q_n_res(exp_w,s);
+parameter p_rec_res(exp_w);
+parameter p_res(exp_w,s);
+parameter profit_n(exp_w);
+parameter profit_r(exp_w);
+parameter mn_res(exp_w);
+parameter mr_res(exp_w);
+parameter cn_res(exp_w);
+parameter cr_res(exp_w);
 
-loop(i,
-    a=(ord(i)-1)/10;
-    solve ndrf min n_costs using mpec;
-    q_r_res(i)=q_r.l; 
-    q_n_res(i)=q_n.l; 
-    p_rec_res(i)=p_rec.l; 
-    p_res(i)=p.l; 
+parameter r_rhs(exp_w);
+parameter n_rhs(exp_w);
+
+parameter modifier_sc(s) /s0 1.2, s1 0.8/;
+
+parameter expected_w_res(exp_w);
+
+loop(exp_w,
+  w(s) = 50*ord(exp_w)*modifier_sc(s);
+  expected_w_res(exp_w)=sum(s, w(s));
+
+  a=0.9;
+  solve ndrf_penalty using qcp min n_costs;
+
+  q_r_res(exp_w,s)=q_r.l(s);
+  q_n_res(exp_w,s)=q_n.l(s);
+  p_rec_res(exp_w)=p_rec.l;
+  p_res(exp_w,s)=p.l(s);
+
+  mr_res(exp_w)=mr.l;
+  mn_res(exp_w)=mn.l;
+
+  cr_res(exp_w)=cr.l;
+  cn_res(exp_w)=cn.l;
+
+  profit_r(exp_w) = sum(s, tau(s)*p.l(s)*q_r.l(s))                                          + p_rec.l*cr.l - penalty*mr.l;
+  profit_n(exp_w) = sum(s, tau(s)*p.l(s)*q_n.l(s) - 20*q_n.l(s) + 0.0005*power(q_n.l(s),2)) - p_rec.l*cn.l - penalty*mn.l;
+
+  r_rhs(exp_w) = (a-1)*(sum(s, tau(s)*q_r.l(s)));
+  n_rhs(exp_w) = a*(sum(s, tau(s)*q_n.l(s)));
 );
 
 display
+expected_w_res,
+p_res,
 q_r_res,
 q_n_res,
 p_rec_res,
-p_res
+profit_r,
+profit_n,
+mr_res,
+mn_res,
+cr_res,
+cn_res
+*r_rhs,
+*n_rhs
 ;
