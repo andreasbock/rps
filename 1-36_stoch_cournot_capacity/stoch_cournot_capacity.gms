@@ -6,11 +6,12 @@ $offlisting
 set s /s0, s1/;
 
 parameter
-    a         RPS requirement
+    a        RPS requirement
     n_max    max generation per stage /500/
     n_min    min generation per stage /0/
-    w(s)      wind power per scenario
-    tau(s)    prob of scenario         /s0 4360, s1 4360/
+    w(s)     wind power per scenario
+    tau(s)   prob of scenario        /s0 4360, s1 4360/
+    rho(s)   capacity factor          /s0 1, s1 0.6/
 ;
 
 variables
@@ -58,12 +59,14 @@ equations
 *** Inverse demand function
 inv_demand(s) .. p(s) =e= 100 - 0.01*(q_n(s) + q_r(s));
 
-grd_r(s) .. tau(s)*(-p(s) + 0.01*q_r(s)) - gamma_r_lo(s) + gamma_r_hi(s) - (1-a)*tau(s)*p_rec =e= 0;
+grd_r(s) .. tau(s)*(-p(s) + 0.01*q_r(s)) - gamma_r_lo(s)
+            + gamma_r_hi(s) - (1-a)*tau(s)*p_rec =e= 0;
 
 min_r(s)  .. q_r(s) =g= 0;
-max_r(s)  .. w(s) - q_r(s) =g= 0;
+max_r(s)  .. w(s)*rho(s) - q_r(s) =g= 0;
 
-grd_n(s) .. tau(s)*(-p(s) + 0.01*q_n(s)) + tau(s)*(20 + 0.001*q_n(s)) - gamma_n_lo(s) + gamma_n_hi(s) + a*tau(s)*p_rec =e= 0;
+grd_n(s) .. tau(s)*(-p(s) + 0.01*q_n(s)) + tau(s)*(20 + 0.001*q_n(s))
+          - gamma_n_lo(s) + gamma_n_hi(s) + a*tau(s)*p_rec =e= 0;
 
 min_n(s) .. q_n(s) =g= 0;
 max_n(s) .. n_max - q_n(s) =g= 0;
@@ -85,42 +88,30 @@ mcc.p_rec
 *** Loop over all RPS levels
 set exp_w /e1*e80/;
 
-parameter q_r_res(exp_w,s);
-parameter q_n_res(exp_w,s);
 parameter p_rec_res(exp_w);
-parameter p_res(exp_w,s);
 parameter profit_n(exp_w);
 parameter profit_r(exp_w);
-scalar eta;
-
-parameter modifier_sc(s) /s0 1, s1 0.6/;
 
 parameter expected_w_res(exp_w,s);
 
 loop(exp_w,
-  w(s) = 10*ord(exp_w)*modifier_sc(s);
+  w(s) = 10*ord(exp_w);
   expected_w_res(exp_w,s) =w(s);
 
   a=0.0;
   solve compl using mcp;
 
-  q_r_res(exp_w,s)=q_r.l(s);
-  q_n_res(exp_w,s)=q_n.l(s);
   p_rec_res(exp_w)=p_rec.l;
-  p_res(exp_w,s)=p.l(s);
 
-  profit_r(exp_w) = sum(s, tau(s)*p.l(s)*q_r.l(s))                                      + (1-a)*p_rec.l*sum(s,tau(s)*q_r.l(s));
-  profit_n(exp_w) = sum(s, tau(s)*p.l(s)*q_n.l(s) - 20*q_n.l(s) + 0.0005*power(q_n.l(s),2)) - a*p_rec.l*sum(s,tau(s)*q_r.l(s));
-
-  eta = sum(s,q_r.l(s)) / sum(s,q_n.l(s)+q_r.l(s));
+  profit_r(exp_w) = sum(s, tau(s)*p.l(s)*q_r.l(s)) 
+                  + (1-a)*p_rec.l*sum(s,tau(s)*q_r.l(s));
+  profit_n(exp_w) = sum(s, tau(s)*p.l(s)*q_n.l(s) - 20*q_n.l(s)
+                  + 0.0005*power(q_n.l(s),2))
+                  - a*p_rec.l*sum(s,tau(s)*q_r.l(s));
 );
 
 display
-p_res,
-q_r_res,
-q_n_res,
 p_rec_res,
 profit_r,
-eta,
 profit_n
 ;
