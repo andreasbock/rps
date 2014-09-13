@@ -109,7 +109,7 @@ logc
 /;
 
 *** Loop over all RPS levels
-set exp_w /e1*e50/;
+set exp_w /e1*e80/;
 
 parameter q_r_res(exp_w,s);
 parameter q_n_res(exp_w,s);
@@ -118,13 +118,13 @@ parameter p_res(exp_w,s);
 parameter profit_n(exp_w);
 parameter profit_r(exp_w);
 
-parameter modifier_sc(s) /s0 1.2, s1 0.8/;
+parameter modifier_sc(s) /s0 1, s1 0.6/;
 
 parameter expected_w_res(exp_w,s);
 parameter logi(exp_w);
 
 loop(exp_w,
-  w(s)=100*ord(exp_w)*modifier_sc(s);
+  w(s)=10*ord(exp_w)*modifier_sc(s);
   expected_w_res(exp_w,s) =w(s);
 
   a=0.5;
@@ -142,11 +142,7 @@ loop(exp_w,
 );
 
 display
-p_res,
-q_r_res,
-q_n_res,
 p_rec_res,
 profit_r,
-profit_n,
-logi
+profit_n
 ;
