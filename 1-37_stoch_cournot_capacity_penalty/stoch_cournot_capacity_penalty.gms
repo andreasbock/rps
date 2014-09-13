@@ -9,7 +9,7 @@ set alpha /a0,a2,a5/;
 parameter
     RPS(alpha)       /a0 0.0, a2 0.2, a5 0.5/
     a         RPS requirement
-    penalty   penalty for not meeting the RPS requirement /50/
+    penalty   penalty for not meeting the RPS requirement /20/
     r_invest  investment cost for the renewable           /100000/
     n_max    max generation per stage                     /1000/
     n_min    min generation per stage                     /0/
@@ -132,14 +132,14 @@ mcc.p_rec
 /;
 
 *** Loop over all RPS levels
-set exp_w /e1*e75/;
+set exp_w /e1*e80/;
 
 parameter q_r_res(exp_w,s);
 parameter q_n_res(exp_w,s);
 parameter p_rec_res(exp_w);
 parameter p_res(exp_w,s);
-parameter profit_n(alpha,exp_w);
-parameter profit_r(alpha,exp_w);
+parameter profit_n(exp_w);
+parameter profit_r(exp_w);
 parameter mn_res(exp_w);
 parameter mr_res(exp_w);
 parameter cn_res(exp_w);
@@ -148,13 +148,13 @@ parameter cr_res(exp_w);
 parameter r_rhs(exp_w);
 parameter n_rhs(exp_w);
 
-parameter modifier_sc(s) /s0 0.8, s1 0.2/;
+parameter modifier_sc(s) /s0 1, s1 0.6/;
 parameter expected_w_res(exp_w);
 parameter w_res(exp_w);
 scalar    step /10/;
 
-loop(alpha,
-  a=RPS(alpha);
+a=0.5;
+
 loop(exp_w,
   w(s) = step*ord(exp_w)*modifier_sc(s);
   expected_w_res(exp_w)=sum(s, w(s));
@@ -168,14 +168,17 @@ loop(exp_w,
   mn_res(exp_w)=mn.l;
   cr_res(exp_w)=cr.l;
   cn_res(exp_w)=cn.l;
-  profit_r(alpha,exp_w) = sum(s, tau(s)*p.l(s)*q_r.l(s))                          + p_rec.l*cr.l - penalty*mr.l - r_invest*step*ord(exp_w);
-  profit_n(alpha,exp_w) = sum(s, tau(s)*p.l(s)*q_n.l(s) - n_cst*q_n.l(s) + (n_lin/2)*power(q_n.l(s),2)) - p_rec.l*cn.l - penalty*mn.l;
+  profit_r(exp_w) = sum(s, tau(s)*p.l(s)*q_r.l(s))                          + p_rec.l*cr.l - penalty*mr.l - r_invest*step*ord(exp_w);
+  profit_n(exp_w) = sum(s, tau(s)*p.l(s)*q_n.l(s) - n_cst*q_n.l(s) + (n_lin/2)*power(q_n.l(s),2)) - p_rec.l*cn.l - penalty*mn.l;
   w_res(exp_w) = step*ord(exp_w);
   r_rhs(exp_w) = (a-1)*(sum(s, tau(s)*q_r.l(s)));
   n_rhs(exp_w) = a*(sum(s, tau(s)*q_n.l(s)));
-  eta(alpha) = sum(s,q_r.l(s)) / sum(s,q_n.l(s)+q_r.l(s));
+* eta(alpha) = sum(s,q_r.l(s)) / sum(s,q_n.l(s)+q_r.l(s));
  );
-);
+
+display p_rec_res, profit_r, profit_n;
+
+$exit
 
 scalar optimal_w /-1000000000000000000000000/;
 loop(alpha,
