@@ -83,7 +83,7 @@ mcc.p_rec
 /;
 
 *** Loop over all RPS levels
-set exp_w /e1*e75/;
+set exp_w /e1*e80/;
 
 parameter q_r_res(exp_w,s);
 parameter q_n_res(exp_w,s);
@@ -91,6 +91,7 @@ parameter p_rec_res(exp_w);
 parameter p_res(exp_w,s);
 parameter profit_n(exp_w);
 parameter profit_r(exp_w);
+scalar eta;
 
 parameter modifier_sc(s) /s0 1, s1 0.6/;
 
@@ -100,7 +101,7 @@ loop(exp_w,
   w(s) = 10*ord(exp_w)*modifier_sc(s);
   expected_w_res(exp_w,s) =w(s);
 
-  a=0.5;
+  a=0.0;
   solve compl using mcp;
 
   q_r_res(exp_w,s)=q_r.l(s);
@@ -110,6 +111,8 @@ loop(exp_w,
 
   profit_r(exp_w) = sum(s, tau(s)*p.l(s)*q_r.l(s))                                      + (1-a)*p_rec.l*sum(s,tau(s)*q_r.l(s));
   profit_n(exp_w) = sum(s, tau(s)*p.l(s)*q_n.l(s) - 20*q_n.l(s) + 0.0005*power(q_n.l(s),2)) - a*p_rec.l*sum(s,tau(s)*q_r.l(s));
+
+  eta = sum(s,q_r.l(s)) / sum(s,q_n.l(s)+q_r.l(s));
 );
 
 display
@@ -118,5 +121,6 @@ q_r_res,
 q_n_res,
 p_rec_res,
 profit_r,
+eta,
 profit_n
 ;
