@@ -16,7 +16,7 @@ parameters
     tau(s)    prob of scenario                            /s0 4380, s1 4380/
     n_cst                                                 /20/
     n_lin                                                 /0.04/
-    rho(s) /s0 1, s1 0.6/
+    rho(s) /s0 0.8, s1 0.2/
 ;
 
 variables
