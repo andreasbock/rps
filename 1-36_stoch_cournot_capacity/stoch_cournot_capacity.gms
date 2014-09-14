@@ -6,12 +6,12 @@ $offlisting
 set s /s0, s1/;
 
 parameter
-    a        RPS requirement
-    n_max    max generation per stage /500/
+    a        RPS requirement          /0.5/
+    n_max    max generation per stage /1000/
     n_min    min generation per stage /0/
     w(s)     wind power per scenario
     tau(s)   prob of scenario        /s0 4360, s1 4360/
-    rho(s)   capacity factor          /s0 1, s1 0.6/
+    rho(s)   capacity factor          /s0 0.8, s1 0.2/
 ;
 
 variables
@@ -72,7 +72,6 @@ min_n(s) .. q_n(s) =g= 0;
 max_n(s) .. n_max - q_n(s) =g= 0;
 
 mcc .. sum(s, tau(s)*(1-a)*q_r(s)) - sum(s,tau(s)*a*q_n(s)) =g= 0;
-*mcc .. sum(s, tau(s)*((1-a)*q_r(s) - a*q_n(s))) =g= 0;
 
 model compl
 /inv_demand,
@@ -92,13 +91,9 @@ parameter p_rec_res(exp_w);
 parameter profit_n(exp_w);
 parameter profit_r(exp_w);
 
-parameter expected_w_res(exp_w,s);
-
 loop(exp_w,
   w(s) = 10*ord(exp_w);
-  expected_w_res(exp_w,s) =w(s);
 
-  a=0.0;
   solve compl using mcp;
 
   p_rec_res(exp_w)=p_rec.l;
