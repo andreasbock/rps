@@ -6,12 +6,12 @@ $offlisting
 set s /s0, s1/;
 
 parameter
-    a        RPS requirement          /0.0/
+    a        RPS requirement          /0.5/
     n_max    max generation per stage /1000/
     n_min    min generation per stage /0/
     w(s)     wind power per scenario
     tau(s)   hours in segment s       /s0 4360, s1 4360/
-    rho(s)   capacity factors         /s0 1, s1 0.6/
+    rho(s)   capacity factors         /s0 0.8, s1 0.2/
     M        used in linearisation    /1000000000/
 ;
 
