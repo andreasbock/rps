@@ -5,6 +5,7 @@ Sets
     s   scenarios /s0, s1/
     b   binary for expansion block discretisation /b1*b1000/
     nb  binary for lda discretisation /nb1*nb200/
+    price_set /p1*p20/
 ;
 
 Scalar
@@ -17,6 +18,7 @@ Scalar
     d      demand for electricity           /750/
     M      constant                         /1000000000/
     penalty                                 /20/
+    p_rec_p
 ;
 
 Parameter
@@ -105,8 +107,7 @@ Equations
 ;
 
 * Upper-level problem
-obj .. r_costs =e= c_inv*X_r - sum(s,tau(s)*exp_bl*rho(s)*sum(nb,k(nb,s))) + penalty*mr;
-* - p_rec*cr;
+obj .. r_costs =e= c_inv*X_r - sum(s,tau(s)*exp_bl*rho(s)*sum(nb,k(nb,s))) + penalty*mr - p_rec_p*cr;
 
 inv_disc  .. X_r =e= exp_bl*sum(nb,v(nb));
 inv_bound .. c_inv*X_r =l= c_max;
@@ -185,6 +186,24 @@ mr_bound
 
 option miqcp = dicopt;
 stoch_wind_exp.optfile = 1;
+
+*** Loop over p_rec
+scalar best /1000000000/;
+scalar opt_prec;
+
+loop(price_set,
+    p_rec_p = ord(price_set);
+    solve stoch_wind_exp min r_costs using miqcp;
+    if (r_costs.l < best,
+        best = r_costs.l;
+        opt_prec = p_rec_p;
+    );
+);
+
+display opt_prec;
+
+$exit
+
 solve stoch_wind_exp min r_costs using miqcp;
 
 display
