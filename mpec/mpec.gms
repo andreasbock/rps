@@ -3,8 +3,8 @@ $offlisting
 
 Sets
     s   scenarios /s0, s1/
-    b   binary for expansion block discretisation /1*200/
-    nb  binary for lda discretisation /1*200/
+    b   binary for expansion block discretisation /b1*b1000/
+    nb  binary for lda discretisation /nb1*nb200/
 ;
 
 Scalar
@@ -12,11 +12,11 @@ Scalar
     n_min  minimum non-renewable production /0/
     n_max  maximum non-renewable production /750/
     exp_bl renewable expansion blocks       /1/
-    c_inv  investment cost per unit         /0/
+    c_inv  investment cost per unit         /1/
     c_max  investment budget                /1000/
     d      demand for electricity           /750/
-    M      constant                         /100000000/
-    penalty                                 /25/
+    M      constant                         /1000000000/
+    penalty                                 /20/
 ;
 
 Parameter
@@ -62,7 +62,6 @@ Variables
 positive variable q_r, q_n;
 positive variable X_r;
 positive variable gam_r_lo, gam_r_hi, gam_n_lo, gam_n_hi;
-positive variable lda;
 positive variable mr, mn, cr, cn;
 
 binary variable v, u_n_hi, u_n_lo, u_r_hi, u_r_lo, u_mcc;
@@ -74,6 +73,8 @@ Equations
     inv_bound upper bound on investment size
     mn_bound
     mr_bound
+    cert_balance_n
+    cert_balance_r
     rec_bound
 
     grd_lg_r    gradient over renewable lagrangian
@@ -103,16 +104,17 @@ Equations
     set_k
 ;
 
-variable logv;
-
 * Upper-level problem
-obj .. r_costs =e= c_inv*X_r - sum(s, tau(s)*exp_bl*rho(s)*sum(nb,k(nb,s)));
+obj .. r_costs =e= c_inv*X_r - sum(s,tau(s)*exp_bl*rho(s)*sum(nb,k(nb,s))) + penalty*mr;
+* - p_rec*cr;
 
-inv_disc .. X_r =e= exp_bl*sum(nb,v(nb));
+inv_disc  .. X_r =e= exp_bl*sum(nb,v(nb));
 inv_bound .. c_inv*X_r =l= c_max;
-mr_bound .. mr - (a-1)*sum(s,tau(s)*q_r(s)) - cr =g= 0;
-mn_bound .. mn - a*sum(s,tau(s)*q_n(s)) + cn =g= 0;
-rec_bound .. penalty - p_rec =g= 0;
+cert_balance_n  .. mn - a*sum(s,tau(s)*q_n(s)) + cn =g= 0;
+cert_balance_r  .. mr - (a-1)*sum(s,tau(s)*q_r(s)) - cr =g= 0;
+mn_bound        .. a*sum(s,tau(s)*q_n(s)) =g= mn;
+mr_bound        .. a*sum(s,tau(s)*q_r(s)) =g= mr;
+rec_bound       .. p_rec =l= penalty;
 
 * KKTs for lower-level problem
 grd_lg_r(s) ..                 - gam_r_lo(s) + gam_r_hi(s) - lda(s) =e= 0;
@@ -149,6 +151,7 @@ model stoch_wind_exp
 /obj,
 inv_disc,
 inv_bound,
+rec_bound,
 grd_lg_r,
 grd_lg_n,
 demand,
@@ -162,22 +165,27 @@ r_up_b,
 r_up_c,
 r_lo_a,
 r_lo_b,
-*mcc_a,
-*mcc_b,
-*mcc_c,
+mcc_a,
+mcc_b,
+mcc_c,
 lin_lda1_1,
 lin_lda1_2,
 lin_lda2_1,
 lin_lda2_2,
 set_k,
-*mn_bound,
-*mr_bound,
-*rec_bound
+cert_balance_n,
+cert_balance_r,
+mn_bound,
+mr_bound
 /;
+
+*
+* SSB does not work
+*
 
 option miqcp = dicopt;
 stoch_wind_exp.optfile = 1;
-solve stoch_wind_exp min r_costs using mip;
+solve stoch_wind_exp min r_costs using miqcp;
 
 display
 q_r.l,
@@ -190,8 +198,11 @@ gam_r_hi.l,
 *gam_r_lo.l,
 *gam_n_hi.l,
 *gam_n_lo.l,
-r_costs.l
-*p_rec.l
+r_costs.l,
+u_mcc.l,
+cn.l,
+cr.l,
+p_rec.l
 *k.l,
 *logv.l
 ;
