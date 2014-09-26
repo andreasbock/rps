@@ -7,111 +7,75 @@ import sys
 
 profit_raw   =""""""
 
-profit_r_raw = """e1  6964655.695,    e2  1.390662E+7,    e3  2.082590E+7,    e4  2.772249E+7,    e5  3.459639E+7,    e6  4.144761E+7,    e7  4.827613E+7,    e8  5.508196E+7,    e9  6.186511E+7,    e10 6.862557E+7,    e11 7.536334E+7,    e12 8.207842E+7,    e13 8.877081E+7
-e14 9.544052E+7,    e15 1.020875E+8,    e16 1.087119E+8,    e17 1.153135E+8,    e18 1.218924E+8,    e19 1.284487E+8,    e20 1.349823E+8,    e21 1.414932E+8,    e22 1.479814E+8,    e23 1.544469E+8,    e24 1.608897E+8,    e25 1.673098E+8,    e26 1.737072E+8
-e27 1.800820E+8,    e28 1.864341E+8,    e29 1.927634E+8,    e30 1.990701E+8,    e31 2.053541E+8,    e32 2.116154E+8,    e33 2.178541E+8,    e34 2.240700E+8,    e35 2.302632E+8,    e36 2.364338E+8,    e37 2.425816E+8,    e38 2.487068E+8,    e39 2.548093E+8
-e40 2.608891E+8,    e41 2.669462E+8,    e42 2.729806E+8,    e43 2.789924E+8,    e44 2.849814E+8,    e45 2.909478E+8,    e46 2.968915E+8,    e47 3.028124E+8,    e48 3.087107E+8,    e49 3.145863E+8,    e50 3.204392E+8,    e51 3.262695E+8,    e52 3.320770E+8
-e53 3.378618E+8,    e54 3.436240E+8,    e55 3.493635E+8,    e56 3.550803E+8,    e57 3.607744E+8,    e58 3.664458E+8,    e59 3.720945E+8,    e60 3.777205E+8,    e61 3.833238E+8,    e62 3.889045E+8,    e63 3.944625E+8,    e64 3.999977E+8,    e65 4.055103E+8
-e66 4.110002E+8,    e67 4.164674E+8,    e68 4.219119E+8,    e69 4.273338E+8,    e70 4.327329E+8,    e71 4.381094E+8,    e72 4.434631E+8,    e73 4.487942E+8,    e74 4.541026E+8,    e75 4.593883E+8,    e76 4.646513E+8,    e77 4.698916E+8,    e78 4.751092E+8
-e79 4.803042E+8,    e80 4.854764E+8"""
+profit_r_raw = """e1  4355228.914,    e2  8700915.657,    e3  1.303706E+7,    e4  1.736366E+7,    e5  2.168072E+7,    e6  2.598824E+7,    e7  3.028622E+7,    e8  3.457465E+7,    e9  3.885354E+7,    e10 4.312289E+7,    e11 4.738270E+7,    e12 5.163296E+7,    e13 5.587369E+7
+e14 6.010487E+7,    e15 6.432651E+7,    e16 6.853860E+7,    e17 7.274116E+7,    e18 7.693417E+7,    e19 8.111764E+7,    e20 8.529157E+7,    e21 8.945595E+7,    e22 9.361079E+7,    e23 9.775610E+7,    e24 1.018919E+8,    e25 1.060181E+8,    e26 1.101347E+8
+e27 1.142419E+8,    e28 1.183395E+8,    e29 1.224275E+8,    e30 1.265060E+8,    e31 1.305750E+8,    e32 1.346344E+8,    e33 1.386843E+8,    e34 1.427246E+8,    e35 1.467554E+8,    e36 1.507767E+8,    e37 1.547884E+8,    e38 1.587906E+8,    e39 1.627832E+8
+e40 1.667663E+8,    e41 1.707398E+8,    e42 1.747038E+8,    e43 1.786583E+8,    e44 1.826032E+8,    e45 1.865386E+8,    e46 1.904644E+8,    e47 1.943807E+8,    e48 1.982874E+8,    e49 2.021846E+8,    e50 2.060723E+8,    e51 2.099504E+8,    e52 2.138190E+8
+e53 2.176780E+8,    e54 2.215275E+8,    e55 2.253675E+8,    e56 2.291979E+8,    e57 2.330187E+8,    e58 2.368301E+8,    e59 2.406319E+8,    e60 2.444241E+8,    e61 2.482068E+8,    e62 2.519799E+8,    e63 2.557436E+8,    e64 2.594976E+8,    e65 2.632422E+8
+e66 2.669772E+8,    e67 2.707026E+8,    e68 2.744185E+8,    e69 2.781249E+8,    e70 2.818217E+8,    e71 2.855090E+8,    e72 2.891867E+8,    e73 2.928549E+8,    e74 2.965135E+8,    e75 3.001626E+8,    e76 3.038022E+8,    e77 3.074322E+8,    e78 3.110527E+8
+e79 3.146637E+8,    e80 3.182651E+8"""
 
-profit_n_raw ="""e1  6964605.467,    e2  1.390706E+7,    e3  2.082737E+7,    e4  2.772553E+7,    e5  3.460154E+7,    e6  4.145540E+7,    e7  4.828711E+7,    e8  5.509667E+7,    e9  6.188408E+7,    e10 6.864935E+7,    e11 7.539246E+7,    e12 8.211343E+7,    e13 8.881224E+7
-e14 9.548891E+7,    e15 1.021434E+8,    e16 1.087758E+8,    e17 1.153860E+8,    e18 1.219741E+8,    e19 1.285400E+8,    e20 1.350838E+8,    e21 1.416054E+8,    e22 1.481049E+8,    e23 1.545822E+8,    e24 1.610374E+8,    e25 1.674704E+8,    e26 1.738813E+8
-e27 1.802700E+8,    e28 1.866366E+8,    e29 1.929810E+8,    e30 1.993033E+8,    e31 2.056035E+8,    e32 2.118814E+8,    e33 2.181373E+8,    e34 2.243710E+8,    e35 2.305825E+8,    e36 2.367719E+8,    e37 2.429391E+8,    e38 2.490842E+8,    e39 2.552072E+8
-e40 2.613079E+8,    e41 2.673866E+8,    e42 2.734431E+8,    e43 2.794774E+8,    e44 2.854896E+8,    e45 2.914797E+8,    e46 2.974476E+8,    e47 3.033933E+8,    e48 3.093169E+8,    e49 3.152184E+8,    e50 3.210977E+8,    e51 3.269548E+8,    e52 3.327898E+8
-e53 3.386027E+8,    e54 3.443934E+8,    e55 3.501619E+8,    e56 3.559083E+8,    e57 3.616326E+8,    e58 3.673347E+8,    e59 3.730147E+8,    e60 3.786725E+8,    e61 3.843081E+8,    e62 3.899217E+8,    e63 3.955130E+8,    e64 4.010822E+8,    e65 4.066293E+8
-e66 4.121542E+8,    e67 4.176570E+8,    e68 4.231376E+8,    e69 4.285961E+8,    e70 4.340324E+8,    e71 4.394466E+8,    e72 4.448386E+8,    e73 4.502085E+8,    e74 4.555562E+8,    e75 4.608818E+8,    e76 4.661852E+8,    e77 4.714665E+8,    e78 4.767256E+8
-e79 4.819626E+8,    e80 4.871774E+8"""
+profit_n_raw ="""e1  4355635.782,    e2  8702943.129,    e3  1.304192E+7,    e4  1.737257E+7,    e5  2.169489E+7,    e6  2.600889E+7,    e7  3.031455E+7,    e8  3.461189E+7,    e9  3.890090E+7,    e10 4.318158E+7,    e11 4.745393E+7,    e12 5.171795E+7,    e13 5.597365E+7
+e14 6.022101E+7,    e15 6.446005E+7,    e16 6.869076E+7,    e17 7.291314E+7,    e18 7.712719E+7,    e19 8.133292E+7,    e20 8.553031E+7,    e21 8.971938E+7,    e22 9.390012E+7,    e23 9.807253E+7,    e24 1.022366E+8,    e25 1.063924E+8,    e26 1.105398E+8
+e27 1.146789E+8,    e28 1.188097E+8,    e29 1.229321E+8,    e30 1.270462E+8,    e31 1.311520E+8,    e32 1.352494E+8,    e33 1.393386E+8,    e34 1.434194E+8,    e35 1.474918E+8,    e36 1.515560E+8,    e37 1.556118E+8,    e38 1.596593E+8,    e39 1.636984E+8
+e40 1.677293E+8,    e41 1.717517E+8,    e42 1.757659E+8,    e43 1.797718E+8,    e44 1.837693E+8,    e45 1.877585E+8,    e46 1.917393E+8,    e47 1.957118E+8,    e48 1.996760E+8,    e49 2.036319E+8,    e50 2.075795E+8,    e51 2.115187E+8,    e52 2.154496E+8
+e53 2.193721E+8,    e54 2.232863E+8,    e55 2.271922E+8,    e56 2.310898E+8,    e57 2.349791E+8,    e58 2.388600E+8,    e59 2.427326E+8,    e60 2.465968E+8,    e61 2.504527E+8,    e62 2.543003E+8,    e63 2.581396E+8,    e64 2.619706E+8,    e65 2.657932E+8
+e66 2.696075E+8,    e67 2.734134E+8,    e68 2.772111E+8,    e69 2.810004E+8,    e70 2.847813E+8,    e71 2.885540E+8,    e72 2.923183E+8,    e73 2.960743E+8,    e74 2.998219E+8,    e75 3.035613E+8,    e76 3.072923E+8,    e77 3.110150E+8,    e78 3.147293E+8
+e79 3.184353E+8,    e80 3.221330E+8"""
 
 rec_price_raw= """"""
 
-# THIS DETERMINES TO USE MATRIX OR THE ARRAY PROFIT
-one_dim = True
-
-opt = str(sys.argv[1])
 rc('text',usetex=True)
 rc('font',family='serif')
 profit_raw_split = profit_raw.split('\n')
 rows = len(profit_raw_split)
 
-if one_dim:
-	profit_r = np.zeros(shape=(80))
-	i = 0
-	for p_raw in profit_r_raw.split('\n'):
-		for p_raw2 in p_raw.split(','):
-			profit_r[i] = float(p_raw2.split()[1])
-			i+=1
-
-
-	profit_n = np.zeros(shape=(80))
-	i = 0
-	for p_raw in profit_n_raw.split('\n'):
-		for p_raw2 in p_raw.split(','):
-			profit_n[i] = float(p_raw2.split()[1])
-			i+=1
-else:
-	z = np.zeros(shape=(80,11))
-	i = 0
-	for p_raw in profit_raw.split('\n'):
-	    p = p_raw.split()[1:]
-	    z[i] = np.array(map(float, p))
-	    i +=1
+profit_n = np.zeros(shape=(80))
+i = 0
+for p_raw in profit_n_raw.split('\n'):
+	for p_raw2 in p_raw.split(','):
+		profit_n[i] = float(p_raw2.split()[1])
+		i+=1
+profit_r = np.zeros(shape=(80))
+i = 0
+for p_raw in profit_r_raw.split('\n'):
+	for p_raw2 in p_raw.split(','):
+		profit_r[i] = float(p_raw2.split()[1])
+		i+=1
 
 rec_price = np.zeros(shape=(80))
 
-if opt == "3d" and not one_dim:
+alphas = [0.2]
+
+x = 10*np.arange(1,81)
+
+for a in alphas:
 	fig = plt.figure()
-	ax = fig.add_subplot(111, projection='3d')
-	ax.set_xlabel(r'RPS ($\alpha$)')
-	ax.set_ylabel(r'Average Capacity ($E[w(\omega)]$)')
-	ax.set_zlabel(r'Profit of the renewable')
-	rps      = np.arange(0,1.1,0.1)
-	capacity = np.arange(1,51,1)
-	x,y = np.meshgrid(rps,capacity)
-	ax.plot_surface(x, y, z, cmap=cm.gnuplot)
+	ax = fig.add_subplot(111)
+	#ax.grid(True)
+	for loc, spine in ax.spines.items():
+		if loc in ['left','bottom','right']:
+			spine.set_position(('outward',10)) # outward by 10 points
+		if loc in ['top']:
+			spine.set_position(('outward',15)) # outward by 10 points
 
-	fig.savefig('foo3d.png',bbox_inches='tight')
-else:
-	alphas = [0.2]
+	ax2 = ax.twinx()
+	ax.spines['top'].set_visible(True)
+	ax.spines['bottom'].set_smart_bounds(True)
+	ax2.spines['top'].set_visible(True)
+	ax2.spines['bottom'].set_smart_bounds(True)
+	for loc, spine in ax2.spines.items():
+		if loc in ['left','bottom','right']:
+			spine.set_position(('outward',10)) # outward by 10 points
+		if loc in ['top']:
+			spine.set_position(('outward',15)) # outward by 10 points
 
-	x = 10*np.arange(1,81)
-
-	for a in alphas:
-		fig = plt.figure()
-		ax = fig.add_subplot(111)
-		#ax.grid(True)
-		for loc, spine in ax.spines.items():
-			if loc in ['left','bottom','right']:
-				spine.set_position(('outward',10)) # outward by 10 points
-			if loc in ['top']:
-				spine.set_position(('outward',15)) # outward by 10 points
-
-		ax2 = ax.twinx()
-		ax.spines['top'].set_visible(True)
-		ax.spines['bottom'].set_smart_bounds(True)
-		ax2.spines['top'].set_visible(True)
-		ax2.spines['bottom'].set_smart_bounds(True)
-		for loc, spine in ax2.spines.items():
-			if loc in ['left','bottom','right']:
-				spine.set_position(('outward',10)) # outward by 10 points
-			if loc in ['top']:
-				spine.set_position(('outward',15)) # outward by 10 points
-
-		#ax2.set_ylabel(r'REC Price (\euro)') u"\u20AC"
-		rc('text.latex', unicode=True) 
-		ax2.set_ylabel(u"REC Price (\u20AC)")
-		#power_prices1,  = ax2.plot(x,power_price.T[0],'--',c='black')
-		#print power_price.T[0]; exit()
-		#power_prices2,  = ax2.plot(x,power_price.T[1],'.')
-		rec_price_plot, = ax2.plot(x,rec_price,'-',linewidth=2,c='black')
-		ax.set_xlabel(r"Renewable Capacity (MW)")
-		ax.set_ylabel(u"Profit of the producers (\u20AC)")
-		if one_dim:
-			profit_r_plt,= ax.plot(x,profit_r,'--',linewidth=4, c='black')
-			profit_n_plt,= ax.plot(x,profit_n,'-.',linewidth=2, c='black')
-		else:
-			profit,= ax.plot(x,z.T[int(a*10)])
-		#ax.legend([profit_r_plt,power_prices1,power_prices2], ["Profit","Power price, scenario 1 (high)", "Power price, scenario 2 (low)"], loc='upper center', bbox_to_anchor=(0, -0.125),fancybox=True, shadow=True, ncol=5)
-		ax.legend([profit_r_plt,profit_n_plt,rec_price_plot], ["$\Xi_r$","$\Xi_n$","$p_{REC}$"], loc='upper left',frameon=False,fancybox=False, shadow=False, ncol=5) #bbox_to_anchor=(0.5, -0.125)
-		#fig.show()
-		fig.savefig("foo.svg",bbox_inches='tight')
+	rc('text.latex', unicode=True) 
+	ax2.set_ylabel(u"REC Price (\u20AC)")
+	rec_price_plot, = ax2.plot(x,rec_price,'-',linewidth=2,c='black')
+	ax.set_xlabel(r"Renewable Capacity (MW)")
+	ax.set_ylabel(u"Profit of the producers (\u20AC)")
+	profit_r_plt,= ax.plot(x,profit_r,'--',linewidth=4, c='black')
+	profit_n_plt,= ax.plot(x,profit_n,'-.',linewidth=2, c='black')
+	ax.legend([profit_r_plt,profit_n_plt,rec_price_plot], ["$\Xi_r$","$\Xi_n$","$p_{REC}$"], loc='lower right',frameon=False,fancybox=False, shadow=False, ncol=5) #bbox_to_anchor=(0.5, -0.125)
+	fig.savefig("foo.svg",bbox_inches='tight')

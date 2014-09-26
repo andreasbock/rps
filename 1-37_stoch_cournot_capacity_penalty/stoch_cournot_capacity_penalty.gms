@@ -7,8 +7,8 @@ set s /s0, s1/;
 set alpha /a0,a2,a5/;
 
 parameter
-    a         RPS requirement                             /0.0/
-    penalty   penalty for not meeting the RPS requirement /10/
+    a         RPS requirement                             /0.5/
+    penalty   penalty for not meeting the RPS requirement /50/
     r_invest  investment cost for the renewable           /200000/
     n_max     max generation per stage                    /1000/
     n_min     min generation per stage                    /0/
@@ -85,8 +85,8 @@ equations
 *** Inverse demand function
 inv_demand(s) .. p(s) =e= 100 - 0.1*(q_n(s) + q_r(s));
 
-*grd_r_a(s) .. -tau(s)*p(s) + tau(s)*0.1*q_r(s) - gamma_r_lo(s) + gamma_r_hi(s) + tau(s)*delta_r*(a-1) =e= 0;
-grd_r_a(s) .. -tau(s)*p(s)                     - gamma_r_lo(s) + gamma_r_hi(s) + tau(s)*delta_r*(a-1) =e= 0;
+grd_r_a(s) .. -tau(s)*p(s) + tau(s)*0.1*q_r(s) - gamma_r_lo(s) + gamma_r_hi(s) + tau(s)*delta_r*(a-1) =e= 0;
+*grd_r_a(s) .. -tau(s)*p(s)                     - gamma_r_lo(s) + gamma_r_hi(s) + tau(s)*delta_r*(a-1) =e= 0;
 grd_r_b .. - p_rec + delta_r - psi_r =e= 0;
 grd_r_c .. penalty - phi_r - delta_r =e= 0;
 
@@ -96,8 +96,8 @@ min_mr .. mr =g= 0;
 min_cr .. cr =g= 0;
 mr_bound .. mr - (a-1)*(sum(s, tau(s)*q_r(s))) - cr =g= 0;
 
-*grd_n_a(s) .. -tau(s)*p(s) + tau(s)*0.1*q_n(s) + tau(s)*(n_cst + n_lin*q_n(s)) - gamma_n_lo(s) + gamma_n_hi(s) + tau(s)*delta_n*a =e= 0;
-grd_n_a(s) .. -tau(s)*p(s)                     + tau(s)*(n_cst + n_lin*q_n(s)) - gamma_n_lo(s) + gamma_n_hi(s) + tau(s)*delta_n*a =e= 0;
+grd_n_a(s) .. -tau(s)*p(s) + tau(s)*0.1*q_n(s) + tau(s)*(n_cst + n_lin*q_n(s)) - gamma_n_lo(s) + gamma_n_hi(s) + tau(s)*delta_n*a =e= 0;
+*grd_n_a(s) .. -tau(s)*p(s)                     + tau(s)*(n_cst + n_lin*q_n(s)) - gamma_n_lo(s) + gamma_n_hi(s) + tau(s)*delta_n*a =e= 0;
 grd_n_b .. p_rec   - delta_n - psi_n =e= 0;
 grd_n_c .. penalty - phi_n - delta_n =e= 0;
 
@@ -150,7 +150,7 @@ loop(exp_w,
 );
 
 display p_rec_res, profit_r, profit_n;
-
+scalar eta;
 *$exit
 
 scalar optimal_w /-1000000000000000000000000/;
@@ -159,10 +159,11 @@ scalar optimal_w /-1000000000000000000000000/;
     if(optimal_w < profit_r(exp_w),
       optimal_w = profit_r(exp_w);
       opt_w = w_res(exp_w);
+      eta = sum(s,q_r.l(s))/(sum(s,q_r.l(s))+sum(s,q_n.l(s)));
     );
   );
 
-display opt_w;
+display opt_w, eta;
 *display
 *p_res,
 *q_r_res,
